@@ -10,6 +10,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+# Load environment variables into os.environ for LangSmith / Langchain
+load_dotenv()
 
 from rag_backend.config.settings import Settings, get_settings
 from rag_backend.di.container import init_container

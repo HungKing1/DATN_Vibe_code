@@ -17,9 +17,11 @@ from __future__ import annotations
 import logging
 
 from rag_backend.application.prompt.prompt_manager import PromptManager
+from rag_backend.application.services.evaluation_service import EvaluationService
 from rag_backend.application.services.ingestion_service import IngestionService
 from rag_backend.application.services.query_service import QueryService
 from rag_backend.application.services.rag_pipeline import RAGPipeline
+from rag_backend.application.services.reflection_service import ReflectionService
 from rag_backend.config.settings import ChunkingStrategyType, LLMProviderType, Settings
 
 from rag_backend.domain.interfaces.chunking_strategy import ChunkingStrategy
@@ -205,12 +207,33 @@ class Container:
             self._instances["prompt_manager"] = PromptManager()
         return self._instances["prompt_manager"]  # type: ignore
 
+    def evaluation_service(self) -> EvaluationService:
+        if "evaluation_service" not in self._instances:
+            self._instances["evaluation_service"] = EvaluationService(
+                llm_provider=self.llm_provider(),
+                prompt_manager=self.prompt_manager(),
+                score_threshold=self._settings.reflection_score_threshold,
+                groundedness_threshold=self._settings.reflection_groundedness_threshold,
+                relevance_threshold=self._settings.reflection_relevance_threshold,
+            )
+        return self._instances["evaluation_service"]  # type: ignore
+
+    def reflection_service(self) -> ReflectionService:
+        if "reflection_service" not in self._instances:
+            self._instances["reflection_service"] = ReflectionService(
+                llm_provider=self.llm_provider(),
+                prompt_manager=self.prompt_manager(),
+            )
+        return self._instances["reflection_service"]  # type: ignore
+
     def rag_pipeline(self) -> RAGPipeline:
         if "rag_pipeline" not in self._instances:
             self._instances["rag_pipeline"] = RAGPipeline(
                 query_service=self.query_service(),
                 llm_provider=self.llm_provider(),
                 prompt_manager=self.prompt_manager(),
+                evaluation_service=self.evaluation_service(),
+                reflection_service=self.reflection_service(),
             )
         return self._instances["rag_pipeline"]  # type: ignore
 

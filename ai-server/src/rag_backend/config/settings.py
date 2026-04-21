@@ -115,6 +115,12 @@ class Settings(BaseSettings):
     max_batch_size: int = 100
     max_document_size_mb: int = 50
 
+    # --- Reflection RAG ---
+    reflection_max_iterations: int = 3
+    reflection_score_threshold: float = 0.75
+    reflection_groundedness_threshold: float = 0.7
+    reflection_relevance_threshold: float = 0.7
+
 
 def get_settings() -> Settings:
     """Factory function for settings (allows caching / overrides)."""
