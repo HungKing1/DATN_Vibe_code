@@ -39,16 +39,13 @@ async def query(
 
     Pipeline: query rewrite → hybrid search → rerank → context build → LLM generate.
     """
-    tenant_id = getattr(request.state, "tenant_id", "default")
-
     if body.stream:
         return StreamingResponse(
-            controller.query_stream(body, tenant_id=tenant_id),
+            controller.query_stream(body),
             media_type="text/event-stream",
         )
 
-    return await controller.query(body, tenant_id=tenant_id)
-
+    return await controller.query(body)
 
 @router.post("/stream")
 async def query_stream(
@@ -60,10 +57,8 @@ async def query_stream(
 
     Tokens are returned in real-time as they are generated.
     """
-    tenant_id = getattr(request.state, "tenant_id", "default")
-
     return StreamingResponse(
-        controller.query_stream(body, tenant_id=tenant_id),
+        controller.query_stream(body),
         media_type="text/event-stream",
     )
 
@@ -84,6 +79,4 @@ async def query_with_reflection(
     query rewriting, additional retrieval, or regeneration —
     up to ``max_reflection_iterations`` times.
     """
-    tenant_id = getattr(request.state, "tenant_id", "default")
-
-    return await controller.query_reflect(body, tenant_id=tenant_id)
+    return await controller.query_reflect(body)

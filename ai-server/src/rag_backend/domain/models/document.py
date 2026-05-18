@@ -31,7 +31,6 @@ class DocumentMetadata(BaseModel):
     file_size_bytes: int = 0
     page_count: int | None = None
     language: str = "en"
-    tenant_id: str = "default"
     collection_name: str = ""
 
     custom: dict[str, Any] = Field(default_factory=dict)
@@ -57,7 +56,7 @@ class ProcessedDocument(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     content: str
     metadata: DocumentMetadata = Field(default_factory=DocumentMetadata)
-    pages: list[str] = Field(default_factory=list)
+    pages: list[str] = Field(default_factory=list) # list page_content
 
 
 class Document(BaseModel):
@@ -78,3 +77,18 @@ class IngestionResult(BaseModel):
 
     success: bool = True
     error_message: str | None = None
+
+
+class LawInfo(BaseModel):
+    """Metadata của 1 bộ văn bản luật trong hệ thống.
+
+    Được lưu trong Weaviate Law collection.
+    UUID do Weaviate tự sinh — dùng làm PK.
+    """
+
+    law_uuid: str                          # UUID do Weaviate sinh — PK
+    title: str                             # LLM sinh từ excerpt
+    description: str                       # LLM sinh, có thể update khi thêm file
+    keywords: list[str] = Field(default_factory=list)
+    source_files: list[str] = Field(default_factory=list)
+    chunk_count: int = 0

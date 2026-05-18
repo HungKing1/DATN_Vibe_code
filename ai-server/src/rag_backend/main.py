@@ -23,7 +23,6 @@ from rag_backend.presentation.middlewares.error_handler import (
     rag_exception_handler,
 )
 from rag_backend.presentation.middlewares.logging_middleware import LoggingMiddleware
-from rag_backend.presentation.middlewares.tenant_middleware import TenantMiddleware
 from rag_backend.presentation.routes import health_routes, ingestion_routes, query_routes
 
 logger = logging.getLogger(__name__)
@@ -46,11 +45,15 @@ async def lifespan(app: FastAPI):
     # Initialize DI container
     container = init_container(settings)
 
+    # Initialize Weaviate schema (Law + LawChunk collections)
+    vector_repo = container.vector_repository()
+    await vector_repo.initialize_schema()
+    logger.info("Weaviate schema initialized: Law + LawChunk ready")
+
     # Inject controllers into app state (for route dependency injection)
     app.state.ingestion_controller = container.ingestion_controller()
     app.state.query_controller = container.query_controller()
-    app.state.vector_repository = container.vector_repository()
-    app.state.collection_router = container.collection_router()
+    app.state.vector_repository = vector_repo
 
     logger.info("Application started successfully")
 
@@ -89,7 +92,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_headers=["*"],
     )
     app.add_middleware(LoggingMiddleware)
-    app.add_middleware(TenantMiddleware)
 
     # --- Exception Handlers ---
     app.add_exception_handler(RAGBackendError, rag_exception_handler)

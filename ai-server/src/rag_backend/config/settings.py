@@ -62,9 +62,7 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
 
-    # --- Multi-Tenant ---
-    multi_tenant_enabled: bool = False
-    default_tenant_id: str = "default"
+
 
     # --- LLM Provider ---
     llm_provider: LLMProviderType = LLMProviderType.GROQ
@@ -91,7 +89,7 @@ class Settings(BaseSettings):
 
     # --- Vector Database ---
     vector_db_provider: VectorDBProvider = VectorDBProvider.WEAVIATE
-    weaviate_url: str = "http://localhost:8080"
+    weaviate_url: str = "http://localhost:9090"
     weaviate_api_key: str = ""
     weaviate_default_collection: str = "documents"
 
@@ -115,11 +113,7 @@ class Settings(BaseSettings):
     max_batch_size: int = 100
     max_document_size_mb: int = 50
 
-    # --- Reflection RAG ---
-    reflection_max_iterations: int = 3
-    reflection_score_threshold: float = 0.75
-    reflection_groundedness_threshold: float = 0.7
-    reflection_relevance_threshold: float = 0.7
+
 
 
 def get_settings() -> Settings:

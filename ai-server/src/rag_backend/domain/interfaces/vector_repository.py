@@ -24,22 +24,6 @@ class VectorRepository(ABC):
     # --- Collection Management ---
 
     @abstractmethod
-    async def create_collection(
-        self,
-        collection_name: str,
-        dimension: int,
-        metadata_schema: dict | None = None,
-        tenant_id: str = "default",
-    ) -> None:
-        """Create a new vector collection."""
-        ...
-
-    @abstractmethod
-    async def delete_collection(self, collection_name: str) -> None:
-        """Delete a vector collection."""
-        ...
-
-    @abstractmethod
     async def list_collections(self) -> list[str]:
         """List all available collections."""
         ...
@@ -52,28 +36,6 @@ class VectorRepository(ABC):
     # --- CRUD Operations ---
 
     @abstractmethod
-    async def store(
-        self,
-        chunks: list[DocumentChunk],
-        collection_name: str,
-    ) -> list[str]:
-        """Store document chunks with embeddings in the vector store.
-
-        Returns:
-            List of stored chunk IDs.
-        """
-        ...
-
-    @abstractmethod
-    async def delete(
-        self,
-        chunk_ids: list[str],
-        collection_name: str,
-    ) -> int:
-        """Delete chunks by IDs. Returns count of deleted items."""
-        ...
-
-    @abstractmethod
     async def delete_by_document_id(
         self,
         document_id: str,
@@ -82,32 +44,79 @@ class VectorRepository(ABC):
         """Delete all chunks belonging to a document."""
         ...
 
-    # --- Search ---
+
+
+    # --- Law / LawChunk 2-Collection Schema ---
 
     @abstractmethod
-    async def search(
-        self,
-        query_vector: list[float],
-        collection_name: str,
-        top_k: int = 10,
-        filters: dict | None = None,
-    ) -> list[RetrievalResult]:
-        """Vector similarity search."""
+    async def initialize_schema(self) -> None:
+        """Create Law and LawChunk collections if they don't exist (idempotent)."""
         ...
 
     @abstractmethod
-    async def hybrid_search(
+    async def upsert_law(
         self,
-        query_text: str,
+        title: str,
+        description: str,
+        keywords: list[str],
+        title_embedding: list[float],
+        source_file: str,
+        law_uuid: str | None = None,
+    ) -> str:
+        """Insert (law_uuid=None) or update (law_uuid provided) a Law object.
+
+        Returns:
+            law_uuid of the created/updated Law object.
+        """
+        ...
+
+    @abstractmethod
+    async def get_all_laws(self) -> list[dict]:
+        """Return all Law objects as list of dicts (uuid, title, description, ...)."""
+        ...
+
+    @abstractmethod
+    async def get_law_by_uuid(self, law_uuid: str) -> dict | None:
+        """Fetch a single Law object by its Weaviate UUID."""
+        ...
+
+    @abstractmethod
+    async def store_chunks(
+        self,
+        chunks: list[DocumentChunk],
+        law_uuid: str,
+    ) -> list[str]:
+        """Store chunks in LawChunk collection, link to Law via cross-reference.
+
+        Returns:
+            List of stored chunk UUIDs.
+        """
+        ...
+
+    @abstractmethod
+    async def search_chunks(
+        self,
         query_vector: list[float],
-        collection_name: str,
-        top_k: int = 10,
-        alpha: float = 0.5,
-        filters: dict | None = None,
+        top_k: int = 20,
+        law_uuid: str | None = None,
     ) -> list[RetrievalResult]:
-        """Hybrid search combining vector similarity and keyword matching.
+        """Vector search on LawChunk collection.
 
         Args:
-            alpha: Balance between vector (1.0) and keyword (0.0) search.
+            law_uuid: If provided, search only within that law's chunks.
+                      If None, search across all chunks (fallback).
+        """
+        ...
+
+    @abstractmethod
+    async def delete_law(self, law_uuid: str) -> dict:
+        """Cascade-delete a Law and ALL its associated LawChunk objects.
+
+        Order of operations:
+        1. Delete all LawChunks where law_uuid == law_uuid (by filter).
+        2. Delete the Law object itself by UUID.
+
+        Returns:
+            dict with keys: law_uuid, chunks_deleted, law_deleted (bool)
         """
         ...

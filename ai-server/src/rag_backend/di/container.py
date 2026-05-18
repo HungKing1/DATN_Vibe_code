@@ -17,11 +17,9 @@ from __future__ import annotations
 import logging
 
 from rag_backend.application.prompt.prompt_manager import PromptManager
-from rag_backend.application.services.evaluation_service import EvaluationService
 from rag_backend.application.services.ingestion_service import IngestionService
 from rag_backend.application.services.query_service import QueryService
 from rag_backend.application.services.rag_pipeline import RAGPipeline
-from rag_backend.application.services.reflection_service import ReflectionService
 from rag_backend.config.settings import ChunkingStrategyType, LLMProviderType, Settings
 
 from rag_backend.domain.interfaces.chunking_strategy import ChunkingStrategy
@@ -39,10 +37,7 @@ from rag_backend.infrastructure.chunking.semantic_chunker import SemanticChunker
 from rag_backend.infrastructure.embeddings.sentence_transformer_provider import (
     SentenceTransformerProvider,
 )
-from rag_backend.infrastructure.input_processors.factory import InputProcessorFactory
-from rag_backend.infrastructure.input_processors.json_processor import JSONProcessor
 from rag_backend.infrastructure.input_processors.pdf_processor import PDFProcessor
-from rag_backend.infrastructure.input_processors.txt_processor import TXTProcessor
 from rag_backend.infrastructure.llm.langchain_provider import LangChainOpenAIProvider
 from rag_backend.infrastructure.llm.google_provider import GoogleGeminiProvider
 from rag_backend.infrastructure.query.default_context_builder import DefaultContextBuilder
@@ -50,7 +45,7 @@ from rag_backend.infrastructure.query.llm_query_rewriter import LLMQueryRewriter
 from rag_backend.infrastructure.reranking.cross_encoder_reranker import CrossEncoderReranker
 from rag_backend.infrastructure.vector_db.weaviate_repository import WeaviateRepository
 from rag_backend.infrastructure.query.collection_router import CollectionRouter
-from rag_backend.domain.models.collection_registry import CollectionRegistry
+# CollectionRegistry removed — Law collection in Weaviate serves as persistent registry
 
 # Controllers
 from rag_backend.presentation.controllers.ingestion_controller import IngestionController
@@ -140,6 +135,7 @@ class Container:
         if "query_rewriter" not in self._instances:
             self._instances["query_rewriter"] = LLMQueryRewriter(
                 llm_provider=self.llm_provider(),
+                prompt_manager=self.prompt_manager(),
             )
         return self._instances["query_rewriter"]  # type: ignore
 
@@ -150,25 +146,17 @@ class Container:
 
 
 
-    def input_processor_factory(self) -> InputProcessorFactory:
-        if "input_processor_factory" not in self._instances:
-            factory = InputProcessorFactory()
-            # Register all built-in processors
-            factory.register(PDFProcessor())
-            factory.register(TXTProcessor())
-            factory.register(JSONProcessor())
-            # ▶ To add a new input type, register here:
-            # factory.register(HTMLProcessor())
-            # factory.register(DOCXProcessor())
-            self._instances["input_processor_factory"] = factory
-        return self._instances["input_processor_factory"]  # type: ignore
+    def input_processor(self) -> PDFProcessor:
+        if "input_processor" not in self._instances:
+            self._instances["input_processor"] = PDFProcessor()
+        return self._instances["input_processor"]  # type: ignore
 
     def collection_router(self) -> CollectionRouter:
         if "collection_router" not in self._instances:
             self._instances["collection_router"] = CollectionRouter(
                 llm_provider=self.llm_provider(),
                 embedding_provider=self.embedding_provider(),
-                registry=CollectionRegistry(),
+                prompt_manager=self.prompt_manager(),
             )
         return self._instances["collection_router"]  # type: ignore
 
@@ -179,7 +167,7 @@ class Container:
     def ingestion_service(self) -> IngestionService:
         if "ingestion_service" not in self._instances:
             self._instances["ingestion_service"] = IngestionService(
-                processor_factory=self.input_processor_factory(),
+                input_processor=self.input_processor(),
                 chunking_strategy=self.chunking_strategy(),
                 embedding_provider=self.embedding_provider(),
                 vector_repository=self.vector_repository(),
@@ -207,33 +195,12 @@ class Container:
             self._instances["prompt_manager"] = PromptManager()
         return self._instances["prompt_manager"]  # type: ignore
 
-    def evaluation_service(self) -> EvaluationService:
-        if "evaluation_service" not in self._instances:
-            self._instances["evaluation_service"] = EvaluationService(
-                llm_provider=self.llm_provider(),
-                prompt_manager=self.prompt_manager(),
-                score_threshold=self._settings.reflection_score_threshold,
-                groundedness_threshold=self._settings.reflection_groundedness_threshold,
-                relevance_threshold=self._settings.reflection_relevance_threshold,
-            )
-        return self._instances["evaluation_service"]  # type: ignore
-
-    def reflection_service(self) -> ReflectionService:
-        if "reflection_service" not in self._instances:
-            self._instances["reflection_service"] = ReflectionService(
-                llm_provider=self.llm_provider(),
-                prompt_manager=self.prompt_manager(),
-            )
-        return self._instances["reflection_service"]  # type: ignore
-
     def rag_pipeline(self) -> RAGPipeline:
         if "rag_pipeline" not in self._instances:
             self._instances["rag_pipeline"] = RAGPipeline(
                 query_service=self.query_service(),
                 llm_provider=self.llm_provider(),
                 prompt_manager=self.prompt_manager(),
-                evaluation_service=self.evaluation_service(),
-                reflection_service=self.reflection_service(),
             )
         return self._instances["rag_pipeline"]  # type: ignore
 
@@ -245,6 +212,7 @@ class Container:
         if "ingestion_controller" not in self._instances:
             self._instances["ingestion_controller"] = IngestionController(
                 ingestion_service=self.ingestion_service(),
+                vector_repository=self.vector_repository(),
             )
         return self._instances["ingestion_controller"]  # type: ignore
 

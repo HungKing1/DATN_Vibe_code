@@ -11,7 +11,6 @@ class IngestionRequest(BaseModel):
     """Request DTO for document ingestion."""
 
     file_name: str
-    tenant_id: str = "default"
     collection_name: str = "documents"
     chunking_strategy: str = "recursive"
     chunk_size: int = 512
@@ -24,7 +23,6 @@ class BatchIngestionRequest(BaseModel):
     """Request DTO for batch document ingestion."""
 
     file_names: list[str]
-    tenant_id: str = "default"
     collection_name: str = "documents"
     chunking_strategy: str = "recursive"
     chunk_size: int = 512

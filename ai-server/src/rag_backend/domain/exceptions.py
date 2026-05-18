@@ -18,14 +18,6 @@ class DocumentProcessingError(RAGBackendError):
     """Raised when document processing fails."""
 
 
-class UnsupportedFileTypeError(DocumentProcessingError):
-    """Raised when a file type has no registered processor."""
-
-    def __init__(self, file_type: str) -> None:
-        super().__init__(f"Unsupported file type: {file_type}")
-        self.file_type = file_type
-
-
 # --- Vector Store ---
 
 class VectorStoreError(RAGBackendError):
@@ -89,6 +81,28 @@ class QueryPipelineError(RAGBackendError):
     """Raised when the query pipeline encounters an error."""
 
 
+class OutOfDomainError(RAGBackendError):
+    """Raised when a user query does not match any available law in the system."""
+
+    def __init__(self, available_laws: list[str]) -> None:
+        law_list = ", ".join(available_laws) if available_laws else "Chưa có bộ luật nào"
+        super().__init__(
+            "Câu hỏi không thuộc lĩnh vực pháp luật mà hệ thống hỗ trợ.",
+            detail=f"Hệ thống hiện có: {law_list}",
+        )
+        self.available_laws = available_laws
+
+
+# --- Law ---
+
+class LawNotFoundError(RAGBackendError):
+    """Raised when a law UUID does not exist in the vector store."""
+
+    def __init__(self, law_uuid: str) -> None:
+        super().__init__(f"Law not found: {law_uuid}")
+        self.law_uuid = law_uuid
+
+
 # --- Ingestion ---
 
 class IngestionError(RAGBackendError):
@@ -104,11 +118,4 @@ class DocumentTooLargeError(IngestionError):
         self.max_mb = max_mb
 
 
-# --- Tenant ---
 
-class TenantNotFoundError(RAGBackendError):
-    """Raised when a tenant does not exist."""
-
-    def __init__(self, tenant_id: str) -> None:
-        super().__init__(f"Tenant not found: {tenant_id}")
-        self.tenant_id = tenant_id

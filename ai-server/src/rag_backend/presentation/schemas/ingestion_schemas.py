@@ -2,37 +2,69 @@
 
 from __future__ import annotations
 
-from uuid import UUID
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
-class FileUploadResponse(BaseModel):
-    """Response schema for single file upload."""
+# ──────────────────────────────────────────────
+# Law creation / file append
+# ──────────────────────────────────────────────
 
-    document_id: UUID
+class FileIngestionResult(BaseModel):
+    """Per-file result inside a batch ingestion response."""
+
     file_name: str
     chunks_stored: int
-    collection_name: str
-    status: str = "completed"
-    task_id: str | None = None
+    success: bool
+    error: str | None = None
 
 
-class BatchUploadResponse(BaseModel):
-    """Response schema for batch file upload."""
+class LawCreateBatchResponse(BaseModel):
+    """Response after creating a new Law from 1 or more files."""
 
+    law_uuid: str
+    title: str
+    description: str
+    source_files: list[str]
+    chunk_count: int
     total_files: int
     successful: int
     failed: int
-    results: list[FileUploadResponse] = Field(default_factory=list)
-    status: str = "completed"
+    results: list[FileIngestionResult] = []
+    status: str = "created"
 
+
+class FilesAddToLawResponse(BaseModel):
+    """Response after adding 1 or more files to an existing Law."""
+
+    law_uuid: str
+    total_files: int
+    successful: int
+    failed: int
+    total_chunks_added: int
+    results: list[FileIngestionResult] = []
+    status: str = "added"
+
+
+# ──────────────────────────────────────────────
+# Law listing
+# ──────────────────────────────────────────────
+
+class LawListResponse(BaseModel):
+    """Response schema for listing all Laws."""
+
+    count: int
+    laws: list[dict]
+
+
+# ──────────────────────────────────────────────
+# Document / chunk deletion
+# ──────────────────────────────────────────────
 
 class DeleteDocumentRequest(BaseModel):
-    """Request schema for document deletion."""
+    """Request schema for document chunk deletion."""
 
     document_id: str
-    collection_name: str = "documents"
+    collection_name: str = "LawChunk"
 
 
 class DeleteDocumentResponse(BaseModel):
@@ -43,16 +75,21 @@ class DeleteDocumentResponse(BaseModel):
     status: str = "deleted"
 
 
-class CollectionCreateRequest(BaseModel):
-    """Request schema for creating a new collection."""
+class DeleteLawResponse(BaseModel):
+    """Response schema for Law cascade delete."""
 
-    collection_name: str
-    dimension: int = 384
-    tenant_id: str = "default"
+    law_uuid: str
+    chunks_deleted: int
+    law_deleted: bool
+    status: str = "deleted"
 
+
+# ──────────────────────────────────────────────
+# Debug / Infra
+# ──────────────────────────────────────────────
 
 class CollectionListResponse(BaseModel):
-    """Response schema for listing collections."""
+    """Response schema for listing Weaviate collections (debug)."""
 
     collections: list[str]
     count: int

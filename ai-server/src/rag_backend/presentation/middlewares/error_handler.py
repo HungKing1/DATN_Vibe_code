@@ -17,20 +17,17 @@ from rag_backend.domain.exceptions import (
     LLMRateLimitError,
     QueryPipelineError,
     RAGBackendError,
-    TenantNotFoundError,
-    UnsupportedFileTypeError,
     VectorStoreError,
+    OutOfDomainError,
 )
 
 logger = logging.getLogger(__name__)
 
 # Map exception types to HTTP status codes
 EXCEPTION_STATUS_MAP: dict[type, int] = {
-    UnsupportedFileTypeError: 400,
     DocumentTooLargeError: 413,
     DocumentProcessingError: 422,
     CollectionNotFoundError: 404,
-    TenantNotFoundError: 404,
     VectorStoreError: 502,
     LLMRateLimitError: 429,
     LLMProviderError: 502,
@@ -38,6 +35,7 @@ EXCEPTION_STATUS_MAP: dict[type, int] = {
     IngestionError: 500,
     QueryPipelineError: 500,
     RAGBackendError: 500,
+    OutOfDomainError: 400,
 }
 
 

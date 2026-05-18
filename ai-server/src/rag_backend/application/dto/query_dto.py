@@ -11,7 +11,6 @@ class QueryRequest(BaseModel):
     """Request DTO for RAG queries."""
 
     query: str
-    tenant_id: str = "default"
     collection_name: str = "documents"
     top_k: int = 20
     rerank_top_k: int = 5

@@ -11,33 +11,20 @@ from rag_backend.domain.models.query import Query, QueryType
 
 logger = logging.getLogger(__name__)
 
-REWRITE_SYSTEM_PROMPT = """You are a query optimizer for a RAG system.
-Rewrite the user's query to improve retrieval from a vector database.
-Make the query more specific, add relevant synonyms, and expand abbreviations.
-Return ONLY the rewritten query, no explanation."""
-
-CLASSIFY_SYSTEM_PROMPT = """You are a query classifier. Classify the user's query into exactly one category:
-- factual: Questions seeking specific facts or data
-- analytical: Questions requiring analysis or reasoning
-- summarization: Requests to summarize content
-- comparison: Questions comparing two or more things
-- conversational: General conversation or greetings
-
-Return ONLY the category name, nothing else."""
-
-
+from rag_backend.application.prompt.prompt_manager import PromptManager
 class LLMQueryRewriter(QueryRewriter):
     """Uses LLM to rewrite queries for better vector retrieval."""
 
-    def __init__(self, llm_provider: LLMProvider) -> None:
+    def __init__(self, llm_provider: LLMProvider, prompt_manager: PromptManager) -> None:
         self._llm = llm_provider
+        self._prompts = prompt_manager
 
     async def rewrite(self, query: Query) -> Query:
         """Rewrite a query using the LLM."""
         try:
             result = await self._llm.generate(
                 prompt=query.original_text,
-                system_prompt=REWRITE_SYSTEM_PROMPT,
+                system_prompt=self._prompts.get_prompt("rewrite_system"),
                 temperature=0.0,
                 max_tokens=256,
             )
@@ -60,7 +47,7 @@ class LLMQueryRewriter(QueryRewriter):
         try:
             result = await self._llm.generate(
                 prompt=query.original_text,
-                system_prompt=CLASSIFY_SYSTEM_PROMPT,
+                system_prompt=self._prompts.get_prompt("classify_system"),
                 temperature=0.0,
                 max_tokens=20,
             )

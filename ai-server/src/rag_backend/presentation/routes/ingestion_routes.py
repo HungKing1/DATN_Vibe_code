@@ -1,4 +1,4 @@
-"""Ingestion API routes."""
+"""Ingestion API routes — Law/LawChunk schema."""
 
 from __future__ import annotations
 
@@ -6,12 +6,13 @@ from fastapi import APIRouter, Depends, Request, UploadFile, File, Form
 from typing import Annotated
 
 from rag_backend.presentation.schemas.ingestion_schemas import (
-    BatchUploadResponse,
-    CollectionCreateRequest,
     CollectionListResponse,
     DeleteDocumentRequest,
     DeleteDocumentResponse,
-    FileUploadResponse,
+    DeleteLawResponse,
+    FilesAddToLawResponse,
+    LawCreateBatchResponse,
+    LawListResponse,
 )
 
 router = APIRouter(prefix="/api/v1/ingestion", tags=["Ingestion"])
@@ -27,47 +28,101 @@ def _get_vector_repo(request: Request):
     return request.app.state.vector_repository
 
 
-@router.post("/upload", response_model=FileUploadResponse)
-async def upload_document(
-    file: Annotated[UploadFile, File(description="Document file to ingest")],
-    collection_name: Annotated[str, Form()] = "documents",
-    request: Request = None,
+# ──────────────────────────────────────────────────────────────
+# Law Management Routes (schema mới — dùng chính)
+# ──────────────────────────────────────────────────────────────
+
+@router.post(
+    "/laws",
+    response_model=LawCreateBatchResponse,
+    summary="Tạo Law mới từ 1 hoặc nhiều file",
+)
+async def create_law(
+    files: Annotated[list[UploadFile], File(description="1 hoặc nhiều file PDF của bộ luật")],
     controller=Depends(_get_ingestion_controller),
 ):
-    """Upload and ingest a single document using Contextual Chunk Headers.
-    
-    The system will auto-generate metadata via LLM and save into collection_name.
+    """Upload 1 hoặc nhiều files và tạo Law object mới trong Weaviate.
+
+    Pipeline:
+    - File đầu: extract → LLM sinh title/description/keywords → create Law → chunk → store
+    - File 2+: extract → LLM update description → chunk → store (append vào Law vừa tạo)
+
+    Trả về law_uuid và kết quả từng file để admin theo dõi.
     """
-    tenant_id = getattr(request.state, "tenant_id", "default") if request else "default"
-    return await controller.upload_file(
-        file=file,
-        collection_name=collection_name,
-        tenant_id=tenant_id,
-    )
+    return await controller.create_law(files=files)
 
 
-@router.post("/upload/batch", response_model=BatchUploadResponse)
-async def upload_batch(
-    files: Annotated[list[UploadFile], File(description="Document files to ingest")],
-    collection_name: Annotated[str, Form()] = "documents",
-    request: Request = None,
+@router.post(
+    "/laws/{law_uuid}/files",
+    response_model=FilesAddToLawResponse,
+    summary="Thêm 1 hoặc nhiều file vào Law đã có",
+)
+async def add_files_to_law(
+    law_uuid: str,
+    files: Annotated[list[UploadFile], File(description="1 hoặc nhiều file PDF bổ sung")],
     controller=Depends(_get_ingestion_controller),
 ):
-    """Upload and ingest multiple documents."""
-    tenant_id = getattr(request.state, "tenant_id", "default") if request else "default"
-    return await controller.upload_batch(
-        files=files,
-        collection_name=collection_name,
-        tenant_id=tenant_id,
+    """Thêm 1 hoặc nhiều files vào Law đã tồn tại (incremental ingestion).
+
+    Pipeline (mỗi file):
+    - extract → LLM cập nhật description (không gen lại) → chunk → embed → store
+
+    Không tạo Law mới — chỉ append chunks vào Law có law_uuid cho trước.
+    """
+    return await controller.add_files_to_law(
+        files=files, law_uuid=law_uuid
     )
 
 
-@router.delete("/document", response_model=DeleteDocumentResponse)
+@router.get(
+    "/laws",
+    response_model=LawListResponse,
+    summary="Danh sách tất cả Laws",
+)
+async def list_laws(
+    controller=Depends(_get_ingestion_controller),
+):
+    """Lấy danh sách tất cả bộ luật từ Weaviate Law collection.
+
+    Data source: Weaviate (persistent) — không phụ thuộc in-memory registry.
+    """
+    return await controller.list_laws()
+
+
+@router.delete(
+    "/laws/{law_uuid}",
+    response_model=DeleteLawResponse,
+    summary="Xóa Law và toàn bộ chunks liên quan",
+)
+async def delete_law(
+    law_uuid: str,
+    controller=Depends(_get_ingestion_controller),
+):
+    """Cascade-delete một bộ luật khỏi Weaviate.
+
+    Thứ tự xóa:
+    1. Xóa tất cả LawChunk objects có `law_uuid` khớp (batch delete by filter).
+    2. Xóa Law object khỏi Law collection.
+
+    Không thể hoàn tác — toàn bộ dữ liệu vector liên quan sẽ bị xóa vĩnh viễn.
+    """
+    return await controller.delete_law(law_uuid=law_uuid)
+
+
+# ──────────────────────────────────────────────────────────────
+# Document / Chunk Management
+# ──────────────────────────────────────────────────────────────
+
+@router.delete(
+    "/document",
+    response_model=DeleteDocumentResponse,
+    summary="Xóa document chunks khỏi LawChunk",
+)
 async def delete_document(
     body: DeleteDocumentRequest,
     controller=Depends(_get_ingestion_controller),
 ):
-    """Delete a document and all its chunks from the vector store."""
+    """Xóa tất cả chunks của 1 document khỏi LawChunk collection."""
     chunks_deleted = await controller.delete_document(
         document_id=body.document_id,
         collection_name=body.collection_name,
@@ -78,51 +133,24 @@ async def delete_document(
     )
 
 
-@router.get("/collections", response_model=CollectionListResponse)
+# ──────────────────────────────────────────────────────────────
+# Debug / Infra
+# ──────────────────────────────────────────────────────────────
+
+@router.get(
+    "/collections",
+    response_model=CollectionListResponse,
+    summary="Liệt kê Weaviate collections (debug)",
+)
 async def list_collections(
     repo=Depends(_get_vector_repo),
 ):
-    """List all vector collections."""
+    """Liệt kê tất cả collections trong Weaviate (Law, LawChunk, ...).
+
+    Dùng để debug — kiểm tra schema đã được khởi tạo chưa.
+    """
     collections = await repo.list_collections()
     return CollectionListResponse(
         collections=collections,
         count=len(collections),
     )
-
-
-@router.post("/collections")
-async def create_collection(
-    body: CollectionCreateRequest,
-    repo=Depends(_get_vector_repo),
-):
-    """Create a new vector collection."""
-    await repo.create_collection(
-        collection_name=body.collection_name,
-        dimension=body.dimension,
-        tenant_id=body.tenant_id,
-    )
-    return {"status": "created", "collection_name": body.collection_name}
-
-
-@router.get("/registry")
-async def list_registered_collections(request: Request):
-    """List all collections with their LLM-generated contextual headers.
-    
-    Returns title, description, keywords, and document count for each collection.
-    """
-    router = request.app.state.collection_router
-    collections = router.registry.list_all()
-    return {
-        "count": len(collections),
-        "collections": [
-            {
-                "collection_name": c.collection_name,
-                "title": c.title,
-                "description": c.description,
-                "keywords": c.keywords,
-                "document_count": c.document_count,
-                "source_files": c.source_files,
-            }
-            for c in collections
-        ],
-    }

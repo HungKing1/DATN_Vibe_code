@@ -22,7 +22,6 @@ class CollectionInfo(BaseModel):
     title_embedding: list[float] = Field(default_factory=list)  # Embedded title+description
     document_count: int = 0
     chunk_count: int = 0
-    tenant_id: str = "default"
     created_at: datetime = Field(default_factory=datetime.utcnow)
     source_files: list[str] = Field(default_factory=list)
 
