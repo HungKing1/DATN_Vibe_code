@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   UploadCloud, Trash2, RefreshCw,
-  CheckCircle2, Clock, AlertCircle, Search, FileText, Database
+  CheckCircle2, Clock, AlertCircle, Search, FileText, Database, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -14,6 +14,8 @@ import {
   Tooltip, TooltipContent, TooltipTrigger,
 } from '../../components/ui/tooltip';
 import { adminApi, LawInfo } from '../../api/adminService';
+import { legalService } from '../../api/legalService';
+import { LegalDocumentSummary } from '../../types';
 
 export function IngestionPage() {
   const [laws, setLaws] = useState<LawInfo[]>([]);
@@ -22,6 +24,11 @@ export function IngestionPage() {
   const [uploadError, setUploadError] = useState('');
   const [uploadSuccess, setUploadSuccess] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+
+  const [mongoDocs, setMongoDocs] = useState<LegalDocumentSummary[]>([]);
+  const [mongoPage, setMongoPage] = useState(0);
+  const [mongoTotalPages, setMongoTotalPages] = useState(0);
+  const [loadingMongo, setLoadingMongo] = useState(false);
 
   const loadLaws = async () => {
     try {
@@ -37,21 +44,45 @@ export function IngestionPage() {
 
   useEffect(() => { loadLaws(); }, []);
 
-  const handleIngest = async () => {
-    if (!tenDayDu.trim()) {
-      setUploadError('Vui lòng nhập tên văn bản');
-      return;
+  const loadMongoDocs = async (keyword = '', page = 0) => {
+    try {
+      setLoadingMongo(true);
+      let res;
+      if (keyword.trim()) {
+        res = await legalService.searchDocuments(keyword, page, 5);
+      } else {
+        res = await legalService.getDocumentList(page, 5);
+      }
+      setMongoDocs(res.content);
+      setMongoTotalPages(res.totalPages);
+      setMongoPage(res.number);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingMongo(false);
     }
+  };
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadMongoDocs(tenDayDu, 0);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [tenDayDu]);
+
+
+
+  const handleRowClick = async (tenDoc: string) => {
+    if (!window.confirm(`Bạn có chắc muốn embedding văn bản: ${tenDoc}?`)) return;
+    
     setUploading(true);
     setUploadError('');
     setUploadSuccess('');
 
     try {
-      const result = await adminApi.createLaw(tenDayDu.trim());
+      const result = await adminApi.createLaw(tenDoc.trim());
       if (result.success) {
         setUploadSuccess(`Đã import thành công: ${result.so_ky_hieu} (${result.chunks_stored} chunks)`);
-        setTenDayDu('');
         await loadLaws();
       } else {
         setUploadError(result.error_message || 'Import thất bại');
@@ -110,27 +141,98 @@ export function IngestionPage() {
                   placeholder="VD: Bộ luật Dân sự, Luật Đất đai..."
                   value={tenDayDu}
                   onChange={(e) => setTenDayDu(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleIngest()}
                   className="w-full h-10 pl-9 pr-4 text-sm bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   disabled={uploading}
                 />
               </div>
-              <Button
-                onClick={handleIngest}
-                disabled={uploading || !tenDayDu.trim()}
-                className="h-10 px-6 bg-primary text-primary-foreground hover:opacity-90"
-              >
-                {uploading ? (
-                  <RefreshCw className="w-4 h-4 animate-spin mr-2" />
-                ) : (
-                  <Database className="w-4 h-4 mr-2" />
-                )}
-                {uploading ? 'Đang xử lý...' : 'Đồng bộ'}
-              </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Hệ thống sẽ tìm kiếm văn bản trong MongoDB (tìm kiếm tương đối) và tạo các chunks tương ứng.
+              Hệ thống sẽ tìm kiếm văn bản trong MongoDB (tìm kiếm tương đối). Nhấn vào văn bản chưa được vector hóa ở danh sách dưới để tiến hành embedding.
             </p>
+          </div>
+
+          {/* MongoDB Documents Table */}
+          <div className="mt-4 border border-border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/10">
+                  <TableHead>Số/Ký hiệu</TableHead>
+                  <TableHead>Tên đầy đủ</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loadingMongo ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center py-4 text-muted-foreground text-sm">
+                      <RefreshCw className="w-4 h-4 animate-spin mx-auto mb-2" />
+                      Đang tìm kiếm...
+                    </TableCell>
+                  </TableRow>
+                ) : mongoDocs.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center py-4 text-muted-foreground text-sm">
+                      Không tìm thấy văn bản nào trong MongoDB.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  mongoDocs.map((doc) => {
+                    const isVectorized = laws.some(law => law.so_ky_hieu === doc.soKyHieu);
+                    return (
+                    <TableRow 
+                      key={doc.id} 
+                      className={`transition-colors ${isVectorized ? 'bg-muted/10 opacity-70 cursor-default' : 'cursor-pointer hover:bg-muted/30'}`}
+                      onClick={() => !isVectorized && handleRowClick(doc.tenDayDu)}
+                    >
+                      <TableCell className="py-2 text-sm font-mono">{doc.soKyHieu}</TableCell>
+                      <TableCell className="py-2 text-sm">
+                        {doc.tenDayDu}
+                        {isVectorized && (
+                          <Badge variant="secondary" className="ml-2 text-[10px] h-5 font-normal">
+                            <CheckCircle2 className="w-3 h-3 mr-1" />
+                            Đã vector hóa
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="py-2">
+                        <Badge variant="outline" className="text-xs font-normal">
+                          {doc.trangThai}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  )})
+                )}
+              </TableBody>
+            </Table>
+            
+            {/* Pagination */}
+            {mongoTotalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-2 border-t border-border bg-muted/10">
+                <span className="text-xs text-muted-foreground">
+                  Trang {mongoPage + 1} / {mongoTotalPages}
+                </span>
+                <div className="flex gap-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-7 w-7"
+                    disabled={mongoPage === 0 || loadingMongo}
+                    onClick={() => loadMongoDocs(tenDayDu, mongoPage - 1)}
+                  >
+                    <ChevronLeft className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-7 w-7"
+                    disabled={mongoPage >= mongoTotalPages - 1 || loadingMongo}
+                    onClick={() => loadMongoDocs(tenDayDu, mongoPage + 1)}
+                  >
+                    <ChevronRight className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           <AnimatePresence>

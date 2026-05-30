@@ -54,9 +54,9 @@ public class AdminController {
      * POST /api/v1/admin/laws/{soKyHieu}/reload
      * Reload an existing Law from MongoDB.
      */
-    @PostMapping("/laws/{soKyHieu}/reload")
+    @PostMapping("/laws/reload")
     public ApiResponse<LawCreateResponse> reloadLaw(
-            @PathVariable String soKyHieu,
+            @RequestParam String soKyHieu,
             @RequestBody Map<String, String> body
     ) {
         String tenDayDu = body.get("ten_day_du");
@@ -73,8 +73,8 @@ public class AdminController {
      * DELETE /api/v1/admin/laws/{soKyHieu}
      * Cascade-delete a Law and ALL its associated LegalChunk objects from Weaviate.
      */
-    @DeleteMapping("/laws/{soKyHieu}")
-    public ApiResponse<DeleteLawResponse> deleteLaw(@PathVariable String soKyHieu) {
+    @DeleteMapping("/laws")
+    public ApiResponse<DeleteLawResponse> deleteLaw(@RequestParam String soKyHieu) {
         log.info("Admin cascade-deleting Law so_ky_hieu={}", soKyHieu);
         DeleteLawResponse response = aiServerClient.deleteLaw(soKyHieu);
         return ApiResponse.success(response);

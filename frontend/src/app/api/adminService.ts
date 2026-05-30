@@ -44,7 +44,7 @@ export const adminApi = {
 
   /** Tải lại một Law đã có từ MongoDB vào Weaviate */
   reloadLaw: async (so_ky_hieu: string, ten_day_du: string): Promise<LawCreateResponse> => {
-    return fetchApi<LawCreateResponse>(`/admin/laws/${so_ky_hieu}/reload`, {
+    return fetchApi<LawCreateResponse>(`/admin/laws/reload?soKyHieu=${encodeURIComponent(so_ky_hieu)}`, {
       method: 'POST',
       body: JSON.stringify({ ten_day_du }),
     });
@@ -52,7 +52,7 @@ export const adminApi = {
 
   /** Xóa Law và toàn bộ chunks liên quan khỏi Weaviate */
   deleteLaw: (soKyHieu: string): Promise<{ status: string }> =>
-    fetchApi<{ status: string }>(`/admin/laws/${soKyHieu}`, {
+    fetchApi<{ status: string }>(`/admin/laws?soKyHieu=${encodeURIComponent(soKyHieu)}`, {
       method: 'DELETE',
     }),
 

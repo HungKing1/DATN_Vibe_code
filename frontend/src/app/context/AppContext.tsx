@@ -45,6 +45,7 @@ interface AppContextValue {
 
   // Layout
   sidebarCollapsed: boolean;
+  setSidebarCollapsed: (collapsed: boolean) => void;
   toggleSidebar: () => void;
   sourcePanelCollapsed: boolean;
   toggleSourcePanel: () => void;
@@ -347,6 +348,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         settings,
         updateSettings,
         sidebarCollapsed,
+        setSidebarCollapsed,
         toggleSidebar,
         sourcePanelCollapsed,
         toggleSourcePanel,

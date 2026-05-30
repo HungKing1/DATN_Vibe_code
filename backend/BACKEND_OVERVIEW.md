@@ -134,8 +134,8 @@ POST   /api/v1/chat                    — Gửi tin nhắn (gọi AI Server)
 ```
 GET    /api/v1/admin/laws                      — Liệt kê tất cả LegalChunk laws (distinct)
 POST   /api/v1/admin/laws                      — Ingest luật từ MongoDB (JSON body: {ten_day_du})
-POST   /api/v1/admin/laws/{so_ky_hieu}/reload  — Re-ingest lại bộ luật (xóa cũ + ingest lại)
-DELETE /api/v1/admin/laws/{so_ky_hieu}         — Xóa toàn bộ LegalChunk của bộ luật đó
+POST   /api/v1/admin/laws/reload?soKyHieu=...  — Re-ingest lại bộ luật (xóa cũ + ingest lại)
+DELETE /api/v1/admin/laws?soKyHieu=...         — Xóa toàn bộ LegalChunk của bộ luật đó
 GET    /api/v1/admin/ai-health                 — Kiểm tra trạng thái AI Server
 ```
 
@@ -271,11 +271,12 @@ java -jar target/backend-0.0.1-SNAPSHOT.jar
 - **Legal Document API Pipeline**:
   - Tích hợp 2 collections MongoDB mới: `legal_documents` (metadata) và `legal_articles` (điều khoản).
   - API list, search, và get detail (`LegalDataController`, `/api/v1/legal/documents`).
-- **Refactor Ingestion (2026-05-29):**
+  - Hỗ trợ cung cấp cấu trúc path (`phan`, `chuong`, `muc`, `tieuMuc`) chi tiết cho từng Điều luật để phục vụ frontend xây dựng cây phân cấp Mục lục.
+- **Refactor Ingestion (2026-05-29 & 05-30):**
   - `AdminController` — đổi từ multipart PDF upload sang nhận JSON `{ten_day_du}`
   - `AiServerClient` — `ingestFromMongodb(String tenDayDu)` thay thế `createLaw(MultipartFile)`
   - DTOs mới: `LawInfo` (so_ky_hieu, ten_day_du, loai_van_ban), `LawCreateResponse` (IngestionResultDto)
-  - Endpoint delete đổi từ `law_uuid` sang `so_ky_hieu`
+  - Endpoint `reloadLaw` và `deleteLaw` đổi sang dùng `@RequestParam String soKyHieu` thay cho `@PathVariable` để sửa lỗi parse URL khi ID chứa `/`.
 
 ### 🔧 Đang làm / Cần kiểm tra
 - *(Cập nhật tại đây khi có)*

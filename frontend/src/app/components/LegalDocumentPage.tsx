@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { Search } from 'lucide-react';
 import { legalService, PageResponse } from '../api/legalService';
 import { LegalDocumentSummary } from '../types';
+import { useApp } from '../context/AppContext';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 
@@ -13,6 +14,7 @@ export const LegalDocumentPage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { setSidebarCollapsed } = useApp();
 
   const fetchDocuments = useCallback(async (searchQuery: string, pageNum: number) => {
     setIsLoading(true);
@@ -58,7 +60,7 @@ export const LegalDocumentPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="p-6 max-w-5xl mx-auto space-y-6 h-full overflow-y-auto">
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-bold text-foreground">Tra cứu Văn bản Pháp luật</h1>
         <p className="text-muted-foreground">Tìm kiếm các bộ luật, quyết định, nghị định, thông tư...</p>
@@ -90,7 +92,10 @@ export const LegalDocumentPage: React.FC = () => {
             <div 
               key={doc.id} 
               className="p-4 hover:bg-muted/50 cursor-pointer transition-colors flex gap-4 items-start"
-              onClick={() => navigate(`/legal/${encodeURIComponent(doc.soKyHieu)}`)}
+              onClick={() => {
+                setSidebarCollapsed(true);
+                navigate(`/legal/${encodeURIComponent(doc.soKyHieu)}`);
+              }}
             >
               <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-medium text-sm mt-1">
                 {page * 10 + index + 1}

@@ -186,8 +186,8 @@ export interface LawCreateResponse {
 // API methods
 adminApi.listLaws()                          // GET /admin/laws
 adminApi.createLaw(ten_day_du: string)       // POST /admin/laws {ten_day_du}
-adminApi.reloadLaw(so_ky_hieu, ten_day_du)   // POST /admin/laws/{so_ky_hieu}/reload
-adminApi.deleteLaw(so_ky_hieu: string)       // DELETE /admin/laws/{so_ky_hieu}
+adminApi.reloadLaw(so_ky_hieu, ten_day_du)   // POST /admin/laws/reload?soKyHieu=...
+adminApi.deleteLaw(so_ky_hieu: string)       // DELETE /admin/laws?soKyHieu=...
 adminApi.checkAiHealth()                     // GET /admin/ai-health
 ```
 
@@ -260,12 +260,19 @@ npm run build
 - **Đã xóa Dark Mode** (2026-05-24): Removed `ThemeToggle.tsx`, `.dark {}` CSS block, `@custom-variant dark`, tất cả `dark:*` Tailwind classes trong ~22 files. App chỉ còn Light mode cố định.
 - **Tính năng Tra cứu Văn bản pháp luật**:
   - Thêm `LegalDocumentPage.tsx` (danh sách + tìm kiếm luật) và `LegalDocumentViewer.tsx` (giao diện đọc văn bản có thanh cuộn Mục lục TOC).
+  - Tối ưu UX/UI cho Trang văn bản: 
+    - Thêm cuộn (scroll) cho danh sách luật.
+    - Đóng sidebar trái tự động khi xem chi tiết.
+    - Xây dựng cây phân cấp (Tree Hierarchy) thực sự cho Mục lục TOC (Phần > Chương > Mục > Tiểu mục > Điều).
+    - Có khả năng click vào bất kỳ cấp bậc nào trên TOC để cuộn (scroll) tới đúng phần nội dung tương ứng.
+    - Tự động chèn các tiêu đề (Heading) hiển thị `Phần`, `Chương`, `Mục`, `Tiểu mục` xen kẽ giữa các Điều trong phần nội dung chính để dễ đọc.
   - `MarkdownRenderer.tsx` được tối ưu hóa: render bảng GFM, chèn blank line tự động cho định dạng chuẩn.
-- **Refactor IngestionPage (2026-05-29):**
+- **Refactor IngestionPage (2026-05-29 & 05-30):**
   - Bỏ hoàn toàn drag-and-drop file upload.
-  - Thay bằng text input nhập tên văn bản (`ten_day_du`) → click đồng bộ.
-  - Hiển thị danh sách luật dạng bảng với `so_ky_hieu`, `ten_day_du`, `loai_van_ban`, `chunk_count`.
-  - `adminService.ts` đã được cập nhật types + methods cho ingestion JSON mới.
+  - Tích hợp tính năng lọc danh sách `legal_document` từ MongoDB trực tiếp dưới thanh tìm kiếm.
+  - Ngăn chặn embedding lại bằng cách so sánh và làm mờ các luật đã vector hóa.
+  - Người dùng click vào một dòng (văn bản chưa vector hóa) trong bảng để đồng bộ.
+  - `adminService.ts` đã được cập nhật methods dùng Query Params thay cho Path Params để tránh lỗi chứa dấu `/`.
 
 ### 🔧 Đang làm / Cần kiểm tra
 - *(Cập nhật tại đây khi có)*
