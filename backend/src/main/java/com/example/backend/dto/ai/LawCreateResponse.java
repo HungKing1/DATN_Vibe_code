@@ -6,12 +6,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 /**
- * Maps to AI Server's LawCreateBatchResponse.
+ * Maps to AI Server's IngestionResultDto.
  *
- * Returned after creating a new Law from 1 or more files.
+ * Returned after ingesting a Law from MongoDB.
  */
 @Data
 @Builder
@@ -19,25 +17,19 @@ import java.util.List;
 @AllArgsConstructor
 public class LawCreateResponse {
 
-    @JsonProperty("law_uuid")
-    private String lawUuid;
+    @JsonProperty("so_ky_hieu")
+    private String soKyHieu;
 
-    private String title;
-    private String description;
+    @JsonProperty("ten_day_du")
+    private String tenDayDu;
 
-    @JsonProperty("source_files")
-    private List<String> sourceFiles;
+    @JsonProperty("chunks_stored")
+    private int chunksStored;
 
-    @JsonProperty("chunk_count")
-    private int chunkCount;
+    private boolean success;
 
-    @JsonProperty("total_files")
-    private int totalFiles;
-
-    private int successful;
-    private int failed;
-
-    private List<FileIngestionResult> results;
+    @JsonProperty("error_message")
+    private String errorMessage;
 
     private String status;
 }

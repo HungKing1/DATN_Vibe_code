@@ -47,7 +47,7 @@ frontend/
 │       │   ├── flashcardService.ts
 │       │   ├── quizService.ts
 │       │   ├── settingsService.ts
-│       │   └── adminService.ts    # Admin APIs (ingestion, collections)
+│       │   └── adminService.ts    # Admin APIs (ingestion vào Weaviate, collections)
 │       │
 │       ├── context/          # React Context (state toàn app)
 │       │   ├── AuthContext.tsx    # useAuth() — user, isAuthenticated, isAdmin, login/logout
@@ -68,7 +68,6 @@ frontend/
 │       │   ├── StudyTimer.tsx     # Bộ đếm thời gian học
 │       │   ├── VideoModal.tsx     # Modal xem video
 │       │   ├── MarkdownRenderer.tsx
-│       │   ├── ThemeToggle.tsx    # Nút chuyển Light/Dark
 │       │   ├── RouteGuards.tsx    # ProtectedRoute + AdminRoute
 │       │   ├── ui/               # Shadcn-style base UI components
 │       │   └── figma/            # Components từ Figma export
@@ -83,7 +82,7 @@ frontend/
 │       │   │   └── SignupPage.tsx
 │       │   └── Admin/
 │       │       ├── AdminDashboard.tsx
-│       │       ├── IngestionPage.tsx      # Upload + quản lý tài liệu luật
+│       │       ├── IngestionPage.tsx      # Quản lý ingest văn bản luật từ MongoDB
 │       │       └── CollectionRegistryPage.tsx
 │       │
 │       ├── data/             # Static mock data / seed data
@@ -150,7 +149,6 @@ const data = await fetchApi<ResponseType>('/endpoint', {
 - Base URL: `/api/v1` (proxy qua Vite → `http://localhost:8080`)
 - Auth: Cookie Session (`credentials: 'include'` — đã set sẵn trong apiClient)
 - Response format chuẩn từ BE: `{ status, data, error }` — hàm `fetchApi` tự unwrap `result.data`
-- FormData upload: KHÔNG set `Content-Type` (để browser tự xử lý boundary)
 - **MOCK_MODE**: Đặt `MOCK_MODE = true` trong `apiClient.ts` để chạy offline với mock data
 
 ### Các service đã có
@@ -159,10 +157,44 @@ const data = await fetchApi<ResponseType>('/endpoint', {
 | `auth.api.ts` | login, register, logout, getMe |
 | `chatService.ts` | getNotebooks, createNotebook, updateNotebook, deleteNotebook, getMessages, sendMessage, clearChat |
 | `legalService.ts` | getLaws, getLegalTopics |
-| `adminService.ts` | upload documents, quản lý collections, ingestion |
+| `adminService.ts` | quản lý ingestion Weaviate, danh sách laws |
 | `flashcardService.ts` | getFlashcards |
 | `quizService.ts` | getQuizQuestions |
 | `settingsService.ts` | getSettings, updateSettings |
+
+### adminService.ts — API types quan trọng
+
+```typescript
+// LawInfo — law đã được vector hóa trong Weaviate
+export interface LawInfo {
+  so_ky_hieu: string;   // "91/2015/QH13"
+  ten_day_du: string;   // "Dân sự"
+  loai_van_ban: string; // "Bộ luật"
+  chunk_count: number;
+}
+
+// LawCreateResponse — kết quả import từ MongoDB
+export interface LawCreateResponse {
+  so_ky_hieu: string;
+  ten_day_du: string;
+  chunks_stored: number;
+  success: boolean;
+  error_message?: string;
+  status: string;
+}
+
+// API methods
+adminApi.listLaws()                          // GET /admin/laws
+adminApi.createLaw(ten_day_du: string)       // POST /admin/laws {ten_day_du}
+adminApi.reloadLaw(so_ky_hieu, ten_day_du)   // POST /admin/laws/{so_ky_hieu}/reload
+adminApi.deleteLaw(so_ky_hieu: string)       // DELETE /admin/laws/{so_ky_hieu}
+adminApi.checkAiHealth()                     // GET /admin/ai-health
+```
+
+> **Thay đổi so với phiên bản cũ:**
+> - Không còn `createLaw(files: File[])` — thay bằng `createLaw(ten_day_du: string)`
+> - Không còn `addFilesToLaw()` — không còn khái niệm "thêm file vào Law"
+> - `deleteLaw(lawUuid)` → `deleteLaw(soKyHieu)` — đổi key định danh
 
 ---
 
@@ -176,6 +208,8 @@ Notebook // { id, title, emoji, color, messageCount, createdAt }
 Note, Flashcard, QuizQuestion, UserProgress, AppSettings
 UserResponse // { id, email, role }  — từ auth.api.ts
 ```
+
+> **Lưu ý về Law type:** Trong `adminService.ts`, `LawInfo` interface đã được cập nhật dùng `so_ky_hieu` thay vì `law_uuid`. Không còn các field `description`, `keywords`, `source_files`.
 
 ---
 
@@ -224,6 +258,14 @@ npm run build
   - `sendMessage(content, mode?)` trong AppContext + chatService
   - Backend nhận field `mode: 'quick' | 'agent'` trong `ChatRequest`
 - **Đã xóa Dark Mode** (2026-05-24): Removed `ThemeToggle.tsx`, `.dark {}` CSS block, `@custom-variant dark`, tất cả `dark:*` Tailwind classes trong ~22 files. App chỉ còn Light mode cố định.
+- **Tính năng Tra cứu Văn bản pháp luật**:
+  - Thêm `LegalDocumentPage.tsx` (danh sách + tìm kiếm luật) và `LegalDocumentViewer.tsx` (giao diện đọc văn bản có thanh cuộn Mục lục TOC).
+  - `MarkdownRenderer.tsx` được tối ưu hóa: render bảng GFM, chèn blank line tự động cho định dạng chuẩn.
+- **Refactor IngestionPage (2026-05-29):**
+  - Bỏ hoàn toàn drag-and-drop file upload.
+  - Thay bằng text input nhập tên văn bản (`ten_day_du`) → click đồng bộ.
+  - Hiển thị danh sách luật dạng bảng với `so_ky_hieu`, `ten_day_du`, `loai_van_ban`, `chunk_count`.
+  - `adminService.ts` đã được cập nhật types + methods cho ingestion JSON mới.
 
 ### 🔧 Đang làm / Cần kiểm tra
 - *(Cập nhật tại đây khi có)*

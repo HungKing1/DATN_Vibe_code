@@ -1,18 +1,15 @@
-"""Ingestion API routes — Law/LawChunk schema."""
+"""Ingestion API routes — LegalChunk schema."""
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Request, UploadFile, File, Form
-from typing import Annotated
+from fastapi import APIRouter, Depends, Request
 
 from rag_backend.presentation.schemas.ingestion_schemas import (
     CollectionListResponse,
-    DeleteDocumentRequest,
-    DeleteDocumentResponse,
     DeleteLawResponse,
-    FilesAddToLawResponse,
-    LawCreateBatchResponse,
+    IngestionResultDto,
     LawListResponse,
+    MongoIngestionRequest,
 )
 
 router = APIRouter(prefix="/api/v1/ingestion", tags=["Ingestion"])
@@ -29,108 +26,60 @@ def _get_vector_repo(request: Request):
 
 
 # ──────────────────────────────────────────────────────────────
-# Law Management Routes (schema mới — dùng chính)
+# Law Management Routes
 # ──────────────────────────────────────────────────────────────
 
 @router.post(
     "/laws",
-    response_model=LawCreateBatchResponse,
-    summary="Tạo Law mới từ 1 hoặc nhiều file",
+    response_model=IngestionResultDto,
+    summary="Ingest Law from MongoDB",
 )
-async def create_law(
-    files: Annotated[list[UploadFile], File(description="1 hoặc nhiều file PDF của bộ luật")],
+async def ingest_law(
+    request: MongoIngestionRequest,
     controller=Depends(_get_ingestion_controller),
 ):
-    """Upload 1 hoặc nhiều files và tạo Law object mới trong Weaviate.
-
-    Pipeline:
-    - File đầu: extract → LLM sinh title/description/keywords → create Law → chunk → store
-    - File 2+: extract → LLM update description → chunk → store (append vào Law vừa tạo)
-
-    Trả về law_uuid và kết quả từng file để admin theo dõi.
-    """
-    return await controller.create_law(files=files)
+    """Ingest a law document from MongoDB into Weaviate LegalChunk collection."""
+    return await controller.ingest_law(request=request)
 
 
 @router.post(
-    "/laws/{law_uuid}/files",
-    response_model=FilesAddToLawResponse,
-    summary="Thêm 1 hoặc nhiều file vào Law đã có",
+    "/laws/{so_ky_hieu:path}/reload",
+    response_model=IngestionResultDto,
+    summary="Reload Law from MongoDB",
 )
-async def add_files_to_law(
-    law_uuid: str,
-    files: Annotated[list[UploadFile], File(description="1 hoặc nhiều file PDF bổ sung")],
+async def reload_law(
+    so_ky_hieu: str, # For path param, but we might just need ten_day_du for ingestion. 
+    # For now, accept a body or just re-route to ingest if needed. Let's just take a body.
+    request: MongoIngestionRequest,
     controller=Depends(_get_ingestion_controller),
 ):
-    """Thêm 1 hoặc nhiều files vào Law đã tồn tại (incremental ingestion).
-
-    Pipeline (mỗi file):
-    - extract → LLM cập nhật description (không gen lại) → chunk → embed → store
-
-    Không tạo Law mới — chỉ append chunks vào Law có law_uuid cho trước.
-    """
-    return await controller.add_files_to_law(
-        files=files, law_uuid=law_uuid
-    )
+    """Reload an existing law from MongoDB."""
+    return await controller.ingest_law(request=request)
 
 
 @router.get(
     "/laws",
     response_model=LawListResponse,
-    summary="Danh sách tất cả Laws",
+    summary="List all distinct Laws",
 )
 async def list_laws(
     controller=Depends(_get_ingestion_controller),
 ):
-    """Lấy danh sách tất cả bộ luật từ Weaviate Law collection.
-
-    Data source: Weaviate (persistent) — không phụ thuộc in-memory registry.
-    """
+    """Get list of distinct laws from Weaviate."""
     return await controller.list_laws()
 
 
 @router.delete(
-    "/laws/{law_uuid}",
+    "/laws/{so_ky_hieu:path}",
     response_model=DeleteLawResponse,
-    summary="Xóa Law và toàn bộ chunks liên quan",
+    summary="Delete Law and its chunks",
 )
 async def delete_law(
-    law_uuid: str,
+    so_ky_hieu: str,
     controller=Depends(_get_ingestion_controller),
 ):
-    """Cascade-delete một bộ luật khỏi Weaviate.
-
-    Thứ tự xóa:
-    1. Xóa tất cả LawChunk objects có `law_uuid` khớp (batch delete by filter).
-    2. Xóa Law object khỏi Law collection.
-
-    Không thể hoàn tác — toàn bộ dữ liệu vector liên quan sẽ bị xóa vĩnh viễn.
-    """
-    return await controller.delete_law(law_uuid=law_uuid)
-
-
-# ──────────────────────────────────────────────────────────────
-# Document / Chunk Management
-# ──────────────────────────────────────────────────────────────
-
-@router.delete(
-    "/document",
-    response_model=DeleteDocumentResponse,
-    summary="Xóa document chunks khỏi LawChunk",
-)
-async def delete_document(
-    body: DeleteDocumentRequest,
-    controller=Depends(_get_ingestion_controller),
-):
-    """Xóa tất cả chunks của 1 document khỏi LawChunk collection."""
-    chunks_deleted = await controller.delete_document(
-        document_id=body.document_id,
-        collection_name=body.collection_name,
-    )
-    return DeleteDocumentResponse(
-        document_id=body.document_id,
-        chunks_deleted=chunks_deleted,
-    )
+    """Delete a law and all its associated chunks from Weaviate."""
+    return await controller.delete_law(so_ky_hieu=so_ky_hieu)
 
 
 # ──────────────────────────────────────────────────────────────
@@ -140,15 +89,12 @@ async def delete_document(
 @router.get(
     "/collections",
     response_model=CollectionListResponse,
-    summary="Liệt kê Weaviate collections (debug)",
+    summary="List Weaviate collections (debug)",
 )
 async def list_collections(
     repo=Depends(_get_vector_repo),
 ):
-    """Liệt kê tất cả collections trong Weaviate (Law, LawChunk, ...).
-
-    Dùng để debug — kiểm tra schema đã được khởi tạo chưa.
-    """
+    """List all collections in Weaviate."""
     collections = await repo.list_collections()
     return CollectionListResponse(
         collections=collections,

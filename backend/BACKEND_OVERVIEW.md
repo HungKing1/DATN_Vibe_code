@@ -71,7 +71,14 @@ backend/
         ├── dto/
         │   ├── request/              # LoginRequest, RegisterRequest, ChatRequest, NotebookRequest...
         │   ├── response/             # ApiResponse<T>, UserResponse, SearchResponse
-        │   └── ai/                   # DTOs cho trao đổi với AI Server (LawInfo, LawCreateResponse...)
+        │   └── ai/                   # DTOs cho trao đổi với AI Server
+        │       ├── LawInfo.java           # { so_ky_hieu, ten_day_du, loai_van_ban, chunk_count }
+        │       ├── LawCreateResponse.java # IngestionResultDto: { so_ky_hieu, ten_day_du, chunks_stored }
+        │       ├── DeleteLawResponse.java # { so_ky_hieu, chunks_deleted, law_deleted, status }
+        │       ├── RAGQueryRequest.java
+        │       ├── RAGResponse.java
+        │       ├── AgentQueryRequest.java
+        │       └── AgentQueryResponse.java
         ├── security/
         │   ├── CookieAuthenticationFilter.java  # Filter chính xác thực mỗi request
         │   ├── CustomUserDetails.java            # Adapter User → UserDetails
@@ -123,15 +130,20 @@ GET    /api/v1/notebooks/{id}/suggestions — Lấy gợi ý câu hỏi
 POST   /api/v1/chat                    — Gửi tin nhắn (gọi AI Server)
 ```
 
-### Admin (ROLE_ADMIN)
+### Admin (ROLE_ADMIN) — Quản lý ingestion Weaviate
 ```
-GET    /api/v1/admin/laws              — Liệt kê tất cả Law từ Weaviate
-POST   /api/v1/admin/laws              — Tạo Law mới từ file PDF (upload)
-POST   /api/v1/admin/laws/{uuid}/files — Thêm file PDF vào Law có sẵn
-DELETE /api/v1/admin/laws/{uuid}       — Xóa Law + toàn bộ LawChunk (cascade)
-DELETE /api/v1/admin/documents         — Xóa document chunks khỏi Weaviate
-GET    /api/v1/admin/ai-health         — Kiểm tra trạng thái AI Server
+GET    /api/v1/admin/laws                      — Liệt kê tất cả LegalChunk laws (distinct)
+POST   /api/v1/admin/laws                      — Ingest luật từ MongoDB (JSON body: {ten_day_du})
+POST   /api/v1/admin/laws/{so_ky_hieu}/reload  — Re-ingest lại bộ luật (xóa cũ + ingest lại)
+DELETE /api/v1/admin/laws/{so_ky_hieu}         — Xóa toàn bộ LegalChunk của bộ luật đó
+GET    /api/v1/admin/ai-health                 — Kiểm tra trạng thái AI Server
 ```
+
+> **Thay đổi so với phiên bản cũ:**
+> - `POST /laws` không còn upload multipart PDF — nhận JSON `{ten_day_du}` và AI Server tự lookup MongoDB
+> - Không còn `POST /laws/{uuid}/files` (thêm file)
+> - Không còn `DELETE /documents` (xóa chunk riêng lẻ)
+> - Tham số đổi từ `uuid` sang `so_ky_hieu` (VD: `"91/2015/QH13"`)
 
 ---
 
@@ -158,9 +170,44 @@ GET    /api/v1/admin/ai-health         — Kiểm tra trạng thái AI Server
 > `AiServerClient` là class trung tâm kết nối tới **FastAPI AI Server** tại `http://localhost:8000`.
 
 - Dùng **Spring WebFlux WebClient** (không phải RestTemplate).
-- Timeout: 30s cho request thường, 120s cho streaming.
-- Tất cả giao tiếp Admin (upload PDF, quản lý Law) đều đi qua class này.
-- **Weaviate là nguồn sự thật** cho Law data — không lưu Law trong MongoDB.
+- Timeout: 30s cho request thường, 300s cho Multi-Agent queries.
+- **Weaviate là nguồn sự thật** cho Law data — không lưu Law riêng trong MongoDB.
+
+### Các method chính
+
+| Method | Endpoint AI Server | Mô tả |
+|--------|-------------------|-------|
+| `query(RAGQueryRequest)` | `POST /api/v1/query/` | Standard RAG query |
+| `queryStream(RAGQueryRequest)` | `POST /api/v1/query/stream` | SSE streaming |
+| `agentQuery(AgentQueryRequest)` | `POST /api/v1/query/agent/` | Multi-Agent RAG |
+| `listLaws()` | `GET /api/v1/ingestion/laws` | Lấy danh sách luật |
+| `ingestFromMongodb(String tenDayDu)` | `POST /api/v1/ingestion/laws` | Import từ MongoDB |
+| `deleteLaw(String soKyHieu)` | `DELETE /api/v1/ingestion/laws/{so_ky_hieu}` | Xóa bộ luật |
+| `isHealthy()` | `GET /health` | Health check |
+
+> **Đã xóa:** `createLaw(List<MultipartFile>)`, `addFilesToLaw()`, `deleteDocument()` — không còn upload PDF.
+
+### DTOs quan trọng (`dto/ai/`)
+
+```java
+// LawInfo — response từ GET /laws
+{
+  "so_ky_hieu": "91/2015/QH13",
+  "ten_day_du": "Dân sự",
+  "loai_van_ban": "Bộ luật",
+  "chunk_count": 412
+}
+
+// LawCreateResponse — response từ POST /laws (IngestionResultDto)
+{
+  "so_ky_hieu": "91/2015/QH13",
+  "ten_day_du": "Dân sự",
+  "chunks_stored": 412,
+  "success": true,
+  "error_message": null,
+  "status": "ingested"
+}
+```
 
 ---
 
@@ -189,8 +236,9 @@ auth.cookie.max-age=604800          # 7 ngày
 ai-server.base-url=http://localhost:8000
 ai-server.timeout=30000
 ai-server.stream-timeout=120000
-spring.servlet.multipart.max-file-size=50MB
 ```
+
+> **Đã xóa:** `spring.servlet.multipart.max-file-size` — không còn upload file.
 
 ---
 
@@ -217,13 +265,17 @@ java -jar target/backend-0.0.1-SNAPSHOT.jar
 - Auth: register, login, logout, getMe
 - Notebook CRUD + Messages + Suggestions
 - Chat endpoint (tích hợp AiServerClient)
-- Admin: Law management (CRUD + file upload → Weaviate)
-- `AiServerClient` — WebClient gọi FastAPI
-- GlobalExceptionHandler, response format chuẩn
 - **Chat mode routing**: `ChatRequest.mode` ('quick'/'agent') → `ChatServiceImpl` gọi đúng pipeline
   - `quick` → `AiServerClient.query()` (POST `/api/v1/query/`)
   - `agent` → `AiServerClient.agentQuery()` (POST `/api/v1/query/agent`)
-  - DTOs mới: `AgentQueryRequest`, `AgentQueryResponse` trong `dto/ai/`
+- **Legal Document API Pipeline**:
+  - Tích hợp 2 collections MongoDB mới: `legal_documents` (metadata) và `legal_articles` (điều khoản).
+  - API list, search, và get detail (`LegalDataController`, `/api/v1/legal/documents`).
+- **Refactor Ingestion (2026-05-29):**
+  - `AdminController` — đổi từ multipart PDF upload sang nhận JSON `{ten_day_du}`
+  - `AiServerClient` — `ingestFromMongodb(String tenDayDu)` thay thế `createLaw(MultipartFile)`
+  - DTOs mới: `LawInfo` (so_ky_hieu, ten_day_du, loai_van_ban), `LawCreateResponse` (IngestionResultDto)
+  - Endpoint delete đổi từ `law_uuid` sang `so_ky_hieu`
 
 ### 🔧 Đang làm / Cần kiểm tra
 - *(Cập nhật tại đây khi có)*

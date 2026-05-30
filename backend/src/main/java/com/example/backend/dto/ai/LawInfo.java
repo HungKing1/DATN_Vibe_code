@@ -6,10 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 /**
- * Maps to AI Server's LawInfo (Weaviate Law collection object).
+ * Maps to AI Server's LawInfo (from Weaviate LegalChunk distinct aggregation).
  *
  * Weaviate is the source of truth for all Law metadata.
  */
@@ -19,15 +17,14 @@ import java.util.List;
 @AllArgsConstructor
 public class LawInfo {
 
-    @JsonProperty("law_uuid")
-    private String lawUuid;
+    @JsonProperty("so_ky_hieu")
+    private String soKyHieu;
 
-    private String title;
-    private String description;
-    private List<String> keywords;
+    @JsonProperty("ten_day_du")
+    private String tenDayDu;
 
-    @JsonProperty("source_files")
-    private List<String> sourceFiles;
+    @JsonProperty("loai_van_ban")
+    private String loaiVanBan;
 
     @JsonProperty("chunk_count")
     private int chunkCount;

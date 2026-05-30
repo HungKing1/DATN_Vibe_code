@@ -1,94 +1,56 @@
-"""Document domain models."""
+"""Legal domain models — replaces generic document models."""
 
 from __future__ import annotations
-
-from datetime import datetime
-from enum import Enum
-from typing import Any
 from uuid import UUID, uuid4
-
 from pydantic import BaseModel, Field
 
 
-class DocumentType(str, Enum):
-    """Supported document types."""
+class LegalChunkMetadata(BaseModel):
+    """Metadata của 1 chunk pháp lý.
 
-    PDF = "pdf"
-    TXT = "txt"
-    JSON = "json"
-    HTML = "html"
-    DOCX = "docx"
-    IMAGE = "image"
-    AUDIO = "audio"
+    Lưu ý: path_phan/chuong/muc/tieu_muc KHÔNG lưu ở đây.
+    Chúng chỉ dùng tạm trong LegalArticleChunker để build
+    embedding_text prefix, sau đó bỏ đi.
+    """
+
+    # — Nhận dạng văn bản —
+    so_ky_hieu: str          # "91/2015/QH13" — filter chính trong Weaviate
+    ten_day_du: str          # "Dân sự" — hiển thị cho user
+    loai_van_ban: str        # "Bộ luật" | "Luật" | ...
+    mongo_doc_id: str        # ObjectId từ legal_documents (trace về nguồn)
+
+    # — Thông tin Điều —
+    dieu_numbers: list[int]       # [27] hoặc [27, 28] nếu merged
+    ten_dieu: str                 # tên Điều đầu tiên trong chunk
+    article_mongo_ids: list[str]  # ObjectId[] từ legal_articles (trace)
+
+    # — Split tracking —
+    is_split: bool = False        # True nếu Điều bị chia nhỏ do quá dài
+    split_part: int | None = None # 1-indexed phần thứ mấy
+    split_total: int | None = None
+    is_merged: bool = False       # True nếu gộp nhiều Điều ngắn
+
+    # — Embedding —
+    embedding_text: str = ""      # "Bộ luật ... Phần... Chương... Điều..." + content
+                                  # Build bởi LegalArticleChunker, dùng để embed
 
 
-class DocumentMetadata(BaseModel):
-    """Metadata associated with a document."""
-
-    source: str = ""
-    file_name: str = ""
-    file_type: DocumentType | str = ""
-    file_size_bytes: int = 0
-    page_count: int | None = None
-    language: str = "en"
-    collection_name: str = ""
-
-    custom: dict[str, Any] = Field(default_factory=dict)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-
-
-class DocumentChunk(BaseModel):
-    """A chunk of a document after splitting."""
+class LegalChunk(BaseModel):
+    """Unit duy nhất lưu vào Weaviate LegalChunk collection."""
 
     id: UUID = Field(default_factory=uuid4)
-    document_id: UUID
-    content: str
+    content: str                  # raw content Điều (LLM đọc cái này)
     chunk_index: int
-    metadata: DocumentMetadata = Field(default_factory=DocumentMetadata)
+    legal: LegalChunkMetadata     # trực tiếp, không wrapper
     embedding: list[float] | None = None
     token_count: int | None = None
 
 
-class ProcessedDocument(BaseModel):
-    """Result of processing a raw input into extractable text."""
-
-    id: UUID = Field(default_factory=uuid4)
-    content: str
-    metadata: DocumentMetadata = Field(default_factory=DocumentMetadata)
-    pages: list[str] = Field(default_factory=list) # list page_content
-
-
-class Document(BaseModel):
-    """Top-level document entity."""
-
-    id: UUID = Field(default_factory=uuid4)
-    content: str
-    chunks: list[DocumentChunk] = Field(default_factory=list)
-    metadata: DocumentMetadata = Field(default_factory=DocumentMetadata)
-
-
 class IngestionResult(BaseModel):
-    """Result of ingesting a document into the vector store."""
+    """Kết quả ingestion 1 văn bản luật."""
 
-    document_id: UUID
+    so_ky_hieu: str
+    ten_day_du: str
     chunks_stored: int
-    collection_name: str
-
     success: bool = True
     error_message: str | None = None
-
-
-class LawInfo(BaseModel):
-    """Metadata của 1 bộ văn bản luật trong hệ thống.
-
-    Được lưu trong Weaviate Law collection.
-    UUID do Weaviate tự sinh — dùng làm PK.
-    """
-
-    law_uuid: str                          # UUID do Weaviate sinh — PK
-    title: str                             # LLM sinh từ excerpt
-    description: str                       # LLM sinh, có thể update khi thêm file
-    keywords: list[str] = Field(default_factory=list)
-    source_files: list[str] = Field(default_factory=list)
-    chunk_count: int = 0

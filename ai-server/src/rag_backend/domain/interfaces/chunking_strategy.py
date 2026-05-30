@@ -4,23 +4,13 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from rag_backend.domain.models.document import DocumentChunk, ProcessedDocument
+from rag_backend.domain.models.document import LegalChunk
 
 
 class ChunkingStrategy(ABC):
     """Abstract base class for chunking strategies.
 
-    Implementations: RecursiveChunker, SemanticChunker, SlidingWindowChunker, etc.
-    Selected at runtime based on configuration (Strategy Pattern).
-
-    Example — adding ML-based chunking:
-        class MLChunker(ChunkingStrategy):
-            def get_strategy_name(self) -> str:
-                return "ml_based"
-
-            async def chunk(self, document) -> list[DocumentChunk]:
-                # ML-based chunking logic
-                ...
+    Implementations: LegalArticleChunker
     """
 
     @abstractmethod
@@ -31,18 +21,16 @@ class ChunkingStrategy(ABC):
     @abstractmethod
     async def chunk(
         self,
-        document: ProcessedDocument,
-        chunk_size: int = 512,
-        chunk_overlap: int = 50,
-    ) -> list[DocumentChunk]:
+        articles: list[dict],
+        doc_meta: dict,
+    ) -> list[LegalChunk]:
         """Split a processed document into chunks.
 
         Args:
-            document: The processed document to chunk.
-            chunk_size: Target size for each chunk (in characters or tokens).
-            chunk_overlap: Overlap between consecutive chunks.
+            articles: List of articles from MongoDB.
+            doc_meta: Document metadata from MongoDB.
 
         Returns:
-            List of DocumentChunk objects.
+            List of LegalChunk objects.
         """
         ...

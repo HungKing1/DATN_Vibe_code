@@ -33,12 +33,6 @@ class EmbeddingProviderType(str, Enum):
     HUGGINGFACE = "huggingface"
 
 
-class ChunkingStrategyType(str, Enum):
-    RECURSIVE = "recursive"
-    SEMANTIC = "semantic"
-    SLIDING_WINDOW = "sliding_window"
-
-
 class IngestionStrategyType(str, Enum):
     SEPARATE = "separate"
     SHARED = "shared"
@@ -96,9 +90,12 @@ class Settings(BaseSettings):
     weaviate_default_collection: str = "documents"
 
     # --- Chunking ---
-    chunking_strategy: ChunkingStrategyType = ChunkingStrategyType.RECURSIVE
-    chunk_size: int = 512
-    chunk_overlap: int = 50
+    chunk_min_tokens: int = 300
+    chunk_max_tokens: int = 600
+
+    # --- MongoDB ---
+    mongodb_url: str = "mongodb://localhost:27017"
+    mongodb_db_name: str = "test"
 
     # --- Reranker ---
     reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"

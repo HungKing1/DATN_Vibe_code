@@ -1,7 +1,6 @@
 package com.example.backend.controller;
 
 import com.example.backend.dto.ai.DeleteLawResponse;
-import com.example.backend.dto.ai.FilesAddToLawResponse;
 import com.example.backend.dto.ai.LawCreateResponse;
 import com.example.backend.dto.ai.LawInfo;
 import com.example.backend.dto.response.ApiResponse;
@@ -9,17 +8,12 @@ import com.example.backend.service.AiServerClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Admin REST controller — manages Law objects stored in Weaviate.
- *
- * All Law data (title, description, chunk_count, source_files) comes
- * directly from Weaviate via AI Server. Weaviate is the source of truth.
+ * Admin REST controller — manages Law objects stored in Weaviate via AI Server.
  *
  * Endpoint prefix: /api/v1/admin
  */
@@ -35,7 +29,7 @@ public class AdminController {
 
     /**
      * GET /api/v1/admin/laws
-     * List all Law objects from Weaviate.
+     * List all distinct Law objects from Weaviate.
      */
     @GetMapping("/laws")
     public ApiResponse<List<LawInfo>> listLaws() {
@@ -46,60 +40,44 @@ public class AdminController {
 
     /**
      * POST /api/v1/admin/laws
-     * Create a new Law by uploading 1 or more PDF files.
-     * AI Server will generate title, description, keywords via LLM.
+     * Ingest a Law from MongoDB into Weaviate.
      */
     @PostMapping("/laws")
-    public ApiResponse<LawCreateResponse> createLaw(
-            @RequestParam("files") List<MultipartFile> files
-    ) throws IOException {
-        log.info("Admin creating new Law from {} file(s)", files.size());
-        LawCreateResponse response = aiServerClient.createLaw(files);
+    public ApiResponse<LawCreateResponse> createLaw(@RequestBody Map<String, String> body) {
+        String tenDayDu = body.get("ten_day_du");
+        log.info("Admin ingesting Law from MongoDB: {}", tenDayDu);
+        LawCreateResponse response = aiServerClient.ingestFromMongodb(tenDayDu);
         return ApiResponse.success(response);
     }
 
     /**
-     * POST /api/v1/admin/laws/{lawUuid}/files
-     * Add 1 or more files to an existing Law.
+     * POST /api/v1/admin/laws/{soKyHieu}/reload
+     * Reload an existing Law from MongoDB.
      */
-    @PostMapping("/laws/{lawUuid}/files")
-    public ApiResponse<FilesAddToLawResponse> addFilesToLaw(
-            @PathVariable String lawUuid,
-            @RequestParam("files") List<MultipartFile> files
-    ) throws IOException {
-        log.info("Admin adding {} file(s) to Law uuid={}", files.size(), lawUuid);
-        FilesAddToLawResponse response = aiServerClient.addFilesToLaw(lawUuid, files);
+    @PostMapping("/laws/{soKyHieu}/reload")
+    public ApiResponse<LawCreateResponse> reloadLaw(
+            @PathVariable String soKyHieu,
+            @RequestBody Map<String, String> body
+    ) {
+        String tenDayDu = body.get("ten_day_du");
+        log.info("Admin reloading Law so_ky_hieu={} from MongoDB: {}", soKyHieu, tenDayDu);
+        // Note: For a clean reload, we should ideally delete the old chunks first, 
+        // which can be done here or handled within the AI server logic.
+        // We will just do a delete then ingest.
+        aiServerClient.deleteLaw(soKyHieu);
+        LawCreateResponse response = aiServerClient.ingestFromMongodb(tenDayDu);
         return ApiResponse.success(response);
     }
 
     /**
-     * DELETE /api/v1/admin/laws/{lawUuid}
-     * Cascade-delete a Law and ALL its associated LawChunk objects from Weaviate.
-     *
-     * Execution order on AI Server:
-     * 1. Batch-delete all LawChunk objects where law_uuid matches.
-     * 2. Delete the Law object itself.
+     * DELETE /api/v1/admin/laws/{soKyHieu}
+     * Cascade-delete a Law and ALL its associated LegalChunk objects from Weaviate.
      */
-    @DeleteMapping("/laws/{lawUuid}")
-    public ApiResponse<DeleteLawResponse> deleteLaw(@PathVariable String lawUuid) {
-        log.info("Admin cascade-deleting Law uuid={}", lawUuid);
-        DeleteLawResponse response = aiServerClient.deleteLaw(lawUuid);
+    @DeleteMapping("/laws/{soKyHieu}")
+    public ApiResponse<DeleteLawResponse> deleteLaw(@PathVariable String soKyHieu) {
+        log.info("Admin cascade-deleting Law so_ky_hieu={}", soKyHieu);
+        DeleteLawResponse response = aiServerClient.deleteLaw(soKyHieu);
         return ApiResponse.success(response);
-    }
-
-    // ── Document Chunk Management ───────────────────────────────
-
-    /**
-     * DELETE /api/v1/admin/documents
-     * Delete a document's chunks from LawChunk collection.
-     */
-    @DeleteMapping("/documents")
-    public ApiResponse<String> deleteDocument(@RequestBody Map<String, String> body) {
-        String documentId = body.get("document_id");
-        String collectionName = body.getOrDefault("collection_name", "LawChunk");
-
-        aiServerClient.deleteDocument(documentId, collectionName);
-        return ApiResponse.success("Document '" + documentId + "' deleted successfully");
     }
 
     // ── AI Server Health ───────────────────────────────────────
