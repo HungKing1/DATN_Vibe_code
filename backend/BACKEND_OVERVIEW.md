@@ -39,11 +39,8 @@ backend/
         │   ├── ChatController.java        # /api/v1/chat
         │   ├── AdminController.java       # /api/v1/admin/** (ROLE_ADMIN)
         │   ├── LegalDataController.java   # /api/v1/legal/**
-        │   ├── FlashcardController.java   # /api/v1/flashcards/**
-        │   ├── QuizController.java        # /api/v1/quiz/**
         │   ├── SearchController.java      # /api/v1/search/**
         │   ├── SettingsController.java    # /api/v1/settings/**
-        │   ├── ProgressController.java    # /api/v1/progress/**
         │   └── UserController.java        # /api/v1/users/**
         ├── service/                  # Business logic interfaces + impls
         │   ├── AiServerClient.java        # Gọi FastAPI (WebClient) — class quan trọng nhất
@@ -57,17 +54,10 @@ backend/
         │   ├── UserAuthSession.java   # user_auth_sessions (cookie session store)
         │   ├── Notebook.java          # notebooks collection
         │   ├── Message.java           # messages collection
-        │   ├── Law.java               # laws collection
-        │   ├── Clause.java            # clauses collection
-        │   ├── LegalTopic.java        # legal_topics collection
-        │   ├── Flashcard.java         # flashcards collection
-        │   └── QuizQuestion.java      # quiz_questions collection
+
         ├── repository/               # Spring Data MongoDB Repositories
         │   ├── UserRepository.java, UserAuthSessionRepository.java
-        │   ├── NotebookRepository.java, MessageRepository.java
-        │   ├── LawRepository.java, ClauseRepository.java
-        │   ├── LegalTopicRepository.java, FlashcardRepository.java
-        │   └── QuizQuestionRepository.java
+        │   └── NotebookRepository.java, MessageRepository.java
         ├── dto/
         │   ├── request/              # LoginRequest, RegisterRequest, ChatRequest, NotebookRequest...
         │   ├── response/             # ApiResponse<T>, UserResponse, SearchResponse
@@ -103,11 +93,8 @@ backend/
 | `NotebookController` | `/api/v1/notebooks/**` | Authenticated |
 | `ChatController` | `/api/v1/chat` | Authenticated |
 | `LegalDataController` | `/api/v1/legal/**` | Authenticated |
-| `FlashcardController` | `/api/v1/flashcards/**` | Authenticated |
-| `QuizController` | `/api/v1/quiz/**` | Authenticated |
 | `SearchController` | `/api/v1/search/**` | Authenticated |
 | `SettingsController` | `/api/v1/settings/**` | Authenticated |
-| `ProgressController` | `/api/v1/progress/**` | Authenticated |
 | `UserController` | `/api/v1/users/**` | Authenticated |
 
 ### Auth endpoints chi tiết
@@ -277,6 +264,9 @@ java -jar target/backend-0.0.1-SNAPSHOT.jar
   - `AiServerClient` — `ingestFromMongodb(String tenDayDu)` thay thế `createLaw(MultipartFile)`
   - DTOs mới: `LawInfo` (so_ky_hieu, ten_day_du, loai_van_ban), `LawCreateResponse` (IngestionResultDto)
   - Endpoint `reloadLaw` và `deleteLaw` đổi sang dùng `@RequestParam String soKyHieu` thay cho `@PathVariable` để sửa lỗi parse URL khi ID chứa `/`.
+- **Dọn dẹp hệ thống (2026-05-30):**
+  - Xóa bỏ hoàn toàn các entity dư thừa (`Law`, `Clause`, `LegalTopic`) và API liên quan (`/api/v1/laws`, `/api/v1/clauses`, `/api/v1/topics`) không còn được sử dụng ở RAG pipeline mới.
+  - Xóa bỏ `ProgressController` và các trường theo dõi tiến độ học (`lawsLearned`, `User.Progress`) không cần thiết.
 
 ### 🔧 Đang làm / Cần kiểm tra
 - *(Cập nhật tại đây khi có)*

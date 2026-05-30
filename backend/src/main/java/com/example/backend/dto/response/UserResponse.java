@@ -9,16 +9,9 @@ public class UserResponse {
     private String id;
     private String email;
     private String role;
-    private ProgressDto progress;
+
     private SettingsDto settings;
 
-    @Data
-    @Builder
-    public static class ProgressDto {
-        private int lawsLearned;
-        private int flashcardsCompleted;
-        private int quizzesCompleted;
-    }
 
     @Data
     @Builder

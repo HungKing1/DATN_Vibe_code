@@ -4,30 +4,17 @@ import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router';
 
 export function WorkspacePage() {
-  const { setCommandPaletteOpen, laws } = useApp();
+  const { setCommandPaletteOpen } = useApp();
   const navigate = useNavigate();
-  const readyDocs = laws.filter(d => d.status === 'active').length;
 
   return (
     <div className="flex flex-col h-full">
       {/* Workspace top bar */}
       <header className="flex items-center justify-between px-4 py-2 border-b border-border bg-card flex-shrink-0">
         <div className="flex items-center gap-2">
-          {/* Clickable search / command trigger */}
-          <button
-            onClick={() => setCommandPaletteOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-muted/60 border border-border rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-          >
-            <Search className="w-3.5 h-3.5" />
-            <span className="text-xs hidden sm:inline">Search or ask anything...</span>
-            <kbd className="px-1.5 py-0.5 bg-background border border-border rounded text-xs hidden sm:inline">⌘K</kbd>
-          </button>
 
-          {/* Status pill */}
-          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-full">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs text-emerald-700">{readyDocs} sources active</span>
-          </div>
+
+
         </div>
 
         <div className="flex items-center gap-1">

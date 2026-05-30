@@ -37,7 +37,6 @@ public class AuthServiceImpl implements AuthService {
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .role("ROLE_USER")
-                .progress(new User.Progress())
                 .settings(new User.Settings())
                 .build();
         userRepository.save(user);

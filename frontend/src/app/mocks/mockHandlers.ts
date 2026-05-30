@@ -1,4 +1,4 @@
-import { mockLaws, mockTopics, mockClauses, mockNotebooks, mockMessages, mockFlashcards, mockQuizQuestions } from './mockDb';
+import { mockNotebooks, mockMessages } from './mockDb';
 
 // Utility to fake network delay
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -7,24 +7,6 @@ export const handleMockRequest = async (endpoint: string, options?: RequestInit)
   await delay(400); // Simulate network latency
   const method = options?.method || 'GET';
 
-  // GET /laws
-  if (endpoint === '/laws' && method === 'GET') return mockLaws;
-  // GET /topics
-  if (endpoint === '/topics' && method === 'GET') return mockTopics;
-  // GET /laws/:id/clauses
-  if (endpoint.startsWith('/laws/') && endpoint.endsWith('/clauses') && method === 'GET') return mockClauses;
-
-  // GET /flashcards
-  if (endpoint.startsWith('/flashcards') && method === 'GET') {
-    // If there's a lawId query, we can filter, but for now we just return all
-    return mockFlashcards;
-  }
-
-  // GET /quiz
-  if (endpoint.startsWith('/quiz') && method === 'GET') {
-    // Similar query filtering can happen here
-    return mockQuizQuestions;
-  }
 
   // GET /notebooks
   if (endpoint === '/notebooks' && method === 'GET') return mockNotebooks;

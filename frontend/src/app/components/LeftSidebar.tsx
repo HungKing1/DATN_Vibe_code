@@ -121,10 +121,6 @@ export function LeftSidebar() {
 
   const navItems = [
     { path: '/', icon: <MessageSquare className="w-4 h-4" />, label: 'Chat' },
-    { path: '/dashboard', icon: <BarChart3 className="w-4 h-4" />, label: 'Dashboard' },
-    { path: '/flashcards', icon: <CreditCard className="w-4 h-4" />, label: 'Flashcards' },
-    { path: '/quiz', icon: <HelpCircle className="w-4 h-4" />, label: 'Quiz' },
-    { path: '/mindmap', icon: <Map className="w-4 h-4" />, label: 'Mind Map' },
     { path: '/legal', icon: <BookOpen className="w-4 h-4" />, label: 'Văn bản Pháp luật' },
   ];
 
@@ -167,30 +163,7 @@ export function LeftSidebar() {
         )}
       </div>
 
-      {/* Command palette button */}
-      {!sidebarCollapsed && (
-        <div className="px-2 pt-2 pb-1 flex-shrink-0">
-          <button
-            onClick={() => setCommandPaletteOpen(true)}
-            className="w-full flex items-center gap-2 px-2.5 py-1.5 bg-muted/60 border border-border rounded-lg text-muted-foreground hover:bg-accent transition-colors"
-          >
-            <Search className="w-3.5 h-3.5 flex-shrink-0" />
-            <span className="text-xs flex-1 text-left">Search commands...</span>
-            <kbd className="px-1.5 py-0.5 bg-background border border-border rounded text-xs">⌘K</kbd>
-          </button>
-        </div>
-      )}
-      {sidebarCollapsed && (
-        <div className="flex justify-center pt-2 pb-1 flex-shrink-0">
-          <button
-            onClick={() => setCommandPaletteOpen(true)}
-            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-accent text-muted-foreground transition-colors"
-            title="⌘K Commands"
-          >
-            <Command className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+
 
       {/* Nav items */}
       <div className={`px-2 py-1.5 flex flex-col gap-0.5 border-b border-border flex-shrink-0 ${sidebarCollapsed ? 'items-center' : ''}`}>

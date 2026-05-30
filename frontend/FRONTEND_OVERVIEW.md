@@ -44,8 +44,7 @@ frontend/
 │       │   ├── auth.api.ts        # /auth/login, /auth/register, /auth/me, /auth/logout
 │       │   ├── chatService.ts     # Notebooks + Messages API
 │       │   ├── legalService.ts    # Laws + Topics API
-│       │   ├── flashcardService.ts
-│       │   ├── quizService.ts
+
 │       │   ├── settingsService.ts
 │       │   └── adminService.ts    # Admin APIs (ingestion vào Weaviate, collections)
 │       │
@@ -58,10 +57,7 @@ frontend/
 │       │   ├── LeftSidebar.tsx    # Danh sách Notebooks, điều hướng
 │       │   ├── ChatPanel.tsx      # Chat UI chính, streaming effect
 │       │   ├── SourcePanel.tsx    # Hiển thị Citations từ RAG
-│       │   ├── Dashboard.tsx      # Trang thống kê học tập
-│       │   ├── FlashcardMode.tsx  # Học bằng flashcard
-│       │   ├── QuizMode.tsx       # Thi trắc nghiệm
-│       │   ├── MindMapPage.tsx    # Sơ đồ tư duy
+
 │       │   ├── SettingsPage.tsx   # Cài đặt người dùng
 │       │   ├── WorkspacePage.tsx  # Trang chính khi vào app
 │       │   ├── CommandPalette.tsx # Cmd+K palette
@@ -106,10 +102,7 @@ frontend/
 | `/auth/login` | `LoginPage` | Public |
 | `/auth/signup` | `SignupPage` | Public |
 | `/` | `WorkspacePage` (trong `MainLayout`) | `ProtectedRoute` (đã đăng nhập) |
-| `/dashboard` | `Dashboard` | `ProtectedRoute` |
-| `/flashcards` | `FlashcardMode` | `ProtectedRoute` |
-| `/quiz` | `QuizMode` | `ProtectedRoute` |
-| `/mindmap` | `MindMapPage` | `ProtectedRoute` |
+
 | `/settings` | `SettingsPage` | `ProtectedRoute` |
 | `/admin` | `AdminDashboard` | `AdminRoute` (role = `ROLE_ADMIN`) |
 | `/admin/ingestion` | `IngestionPage` | `AdminRoute` |
@@ -156,10 +149,9 @@ const data = await fetchApi<ResponseType>('/endpoint', {
 |---|---|
 | `auth.api.ts` | login, register, logout, getMe |
 | `chatService.ts` | getNotebooks, createNotebook, updateNotebook, deleteNotebook, getMessages, sendMessage, clearChat |
-| `legalService.ts` | getLaws, getLegalTopics |
+| `legalService.ts` | getDocumentList, searchDocuments, getDocumentDetail |
 | `adminService.ts` | quản lý ingestion Weaviate, danh sách laws |
-| `flashcardService.ts` | getFlashcards |
-| `quizService.ts` | getQuizQuestions |
+
 | `settingsService.ts` | getSettings, updateSettings |
 
 ### adminService.ts — API types quan trọng
@@ -202,10 +194,10 @@ adminApi.checkAiHealth()                     // GET /admin/ai-health
 
 ```typescript
 // Entities cốt lõi của dự án
-Law, LawStatus, LegalTopic, Clause, Citation
+Citation
 Message  // { id, role: 'user'|'ai', content, citations?, confidence?, suggestedQuestions?, isStreaming? }
 Notebook // { id, title, emoji, color, messageCount, createdAt }
-Note, Flashcard, QuizQuestion, UserProgress, AppSettings
+Note, UserProgress, AppSettings
 UserResponse // { id, email, role }  — từ auth.api.ts
 ```
 
@@ -250,7 +242,7 @@ npm run build
 - AuthContext: đăng nhập/đăng xuất bằng cookie session
 - AppContext: quản lý Notebooks, Chat, streaming effect
 - UI chính: Layout, LeftSidebar, ChatPanel, SourcePanel
-- Các mode học: FlashcardMode, QuizMode, MindMapPage
+- Chức năng Note, Notebooks
 - Admin pages: AdminDashboard, IngestionPage, CollectionRegistryPage
 - Mock system (MOCK_MODE) để dev offline
 - **Chat mode selector**: 2 nút "Nhanh" (⚡) và "Tư duy" (🧠) trong ChatPanel
@@ -273,6 +265,10 @@ npm run build
   - Ngăn chặn embedding lại bằng cách so sánh và làm mờ các luật đã vector hóa.
   - Người dùng click vào một dòng (văn bản chưa vector hóa) trong bảng để đồng bộ.
   - `adminService.ts` đã được cập nhật methods dùng Query Params thay cho Path Params để tránh lỗi chứa dấu `/`.
+- **Dọn dẹp giao diện và logic thừa (2026-05-30):**
+  - Gỡ bỏ hoàn toàn các thanh tìm kiếm (command palette triggers) bị dư thừa ở `WorkspacePage`, `Layout`, và `LeftSidebar`.
+  - Xóa các model dữ liệu cũ không còn dùng (`Law`, `Clause`, `LegalTopic`, `UserProgress`) trong thư mục `types.ts`.
+  - Làm sạch mock data (`mockDb.ts`, `mockData.ts`) tương ứng để tránh rác source code.
 
 ### 🔧 Đang làm / Cần kiểm tra
 - *(Cập nhật tại đây khi có)*

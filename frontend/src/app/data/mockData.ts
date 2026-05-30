@@ -1,31 +1,6 @@
-import { Law, LegalTopic, Citation, Flashcard, Message, QuizQuestion, UserProgress, Notebook, AppSettings } from '../types';
+import { Citation, Message, UserProgress, Notebook, AppSettings } from '../types';
 
-export const mockLegalTopics: LegalTopic[] = [
-  { id: 'topic1', name: 'Civil Law', description: 'Laws related to civil rights and duties.' },
-  { id: 'topic2', name: 'Criminal Law', description: 'Laws related to crimes and penalties.' },
-  { id: 'topic3', name: 'Labor Law', description: 'Laws regulating work and employment.' },
-];
 
-export const mockLaws: Law[] = [
-  {
-    id: 'law1',
-    lawName: 'Labor Code 2019',
-    lawNumber: '45/2019/QH14',
-    effectiveDate: '2021-01-01',
-    topics: ['topic3'],
-    status: 'active',
-    uploadedAt: '2026-04-01',
-  },
-  {
-    id: 'law2',
-    lawName: 'Penal Code 2015',
-    lawNumber: '100/2015/QH13',
-    effectiveDate: '2018-01-01',
-    topics: ['topic2'],
-    status: 'active',
-    uploadedAt: '2026-04-02',
-  },
-];
 
 export const mockCitations: Citation[] = [
   {
@@ -65,33 +40,12 @@ export const initialMessages: Message[] = [
   },
 ];
 
-export const mockFlashcards: Flashcard[] = [
-  {
-    id: 'fc1',
-    front: 'Legal working age under Labor Code?',
-    back: 'The legal working age is generally 15 years old. However, there are exceptions...',
-    clauseId: 'clause1',
-    topicId: 'topic3',
-  },
-];
 
-export const mockQuizQuestions: QuizQuestion[] = [
-  {
-    id: 'q1',
-    question: 'Under the Labor Code, standard weekly working hours must not exceed:',
-    options: ['40 hours', '44 hours', '48 hours', '56 hours'],
-    correctIndex: 2,
-    explanation: 'Article 105 specifies 8 hours per day, 48 hours per week.',
-    clauseId: 'clause1',
-  },
-];
 
 export const mockStudyStats: UserProgress = {
   userId: 'user_1',
   documentsLearned: 2,
-  flashcardsCompleted: 47,
   studyTimeMinutes: 342,
-  quizzesCompleted: 8,
   topicsExplored: 14,
   weeklyActivity: [
     { day: 'Mon', minutes: 45 },
@@ -159,7 +113,6 @@ export const mockNotebooks: Notebook[] = [
 export const defaultSettings: AppSettings = {
   aiModel: 'gpt-4o',
   responseStyle: 'detailed',
-  autoFlashcards: true,
   citationsEnabled: true,
   studyReminders: false,
   soundEffects: false,

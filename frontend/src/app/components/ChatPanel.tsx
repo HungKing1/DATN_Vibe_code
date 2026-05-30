@@ -257,8 +257,8 @@ function NotebookSelector() {
 
 export function ChatPanel() {
   const {
-    messages, isAIThinking, sendMessage, clearChat, laws,
-    activeLawId, streamingMsgId, streamingContent
+    messages, isAIThinking, sendMessage, clearChat,
+    streamingMsgId, streamingContent
   } = useApp();
   const [input, setInput] = useState('');
   const [queryMode, setQueryMode] = useState<QueryMode>('quick');
@@ -267,7 +267,7 @@ export function ChatPanel() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const navigate = useNavigate();
 
-  const activeDoc = laws.find(d => d.id === activeLawId);
+
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -297,8 +297,6 @@ export function ChatPanel() {
 
   const MODES = [
     { id: 'chat', label: 'Chat', icon: <Sparkles className="w-3.5 h-3.5" /> },
-    { id: 'flashcards', label: 'Flashcards', path: '/flashcards', icon: <BarChart2 className="w-3.5 h-3.5" /> },
-    { id: 'quiz', label: 'Quiz', path: '/quiz', icon: <Zap className="w-3.5 h-3.5" /> },
   ];
 
   return (
@@ -307,14 +305,7 @@ export function ChatPanel() {
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-card flex-shrink-0">
         <div className="flex items-center gap-2">
           <NotebookSelector />
-          {activeDoc && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 rounded-full border border-blue-200">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs text-blue-700 truncate max-w-[150px]">
-                {activeDoc.lawName}
-              </span>
-            </div>
-          )}
+
         </div>
 
         <div className="flex items-center gap-2">
@@ -466,7 +457,7 @@ export function ChatPanel() {
           </div>
         </div>
         <p className="text-center text-xs text-muted-foreground mt-2">
-          Grounded in {laws.filter(d => d.status === 'active').length} laws · Shift+Enter for new line · ⌘K for commands
+          Grounded in all legal documents · Shift+Enter for new line · ⌘K for commands
         </p>
       </div>
     </div>

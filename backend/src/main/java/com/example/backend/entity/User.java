@@ -30,7 +30,6 @@ public class User {
     @Builder.Default
     private String role = "ROLE_USER";
 
-    private Progress progress;
 
     private Settings settings;
 
@@ -40,18 +39,6 @@ public class User {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class Progress {
-        @Builder.Default
-        private int lawsLearned = 0;
-        @Builder.Default
-        private int flashcardsCompleted = 0;
-        @Builder.Default
-        private int quizzesCompleted = 0;
-    }
 
     @Data
     @Builder

@@ -35,14 +35,7 @@ export function Layout() {
         {!isWorkspace && (
           <header className="flex items-center justify-between px-6 py-2.5 border-b border-border bg-card flex-shrink-0">
             <div className="flex items-center gap-2 flex-1 max-w-sm">
-              <button
-                onClick={() => setCommandPaletteOpen(true)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-xl flex-1 hover:bg-accent transition-colors text-left"
-              >
-                <Search className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground flex-1">Search anything...</span>
-                <kbd className="px-1.5 py-0.5 bg-background border border-border rounded text-xs text-muted-foreground">⌘K</kbd>
-              </button>
+
             </div>
             <div className="flex items-center gap-1.5">
               <button

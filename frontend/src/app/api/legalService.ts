@@ -1,5 +1,5 @@
 import { fetchApi } from './apiClient';
-import { Law, LegalTopic, LegalDocumentSummary, LegalDocumentDetail } from '../types';
+import { LegalDocumentSummary, LegalDocumentDetail } from '../types';
 
 export interface PageResponse<T> {
   content: T[];
@@ -25,9 +25,6 @@ export const getLegalDocumentDetail = (soKyHieu: string) =>
   );
 
 export const legalService = {
-  getLaws: () => fetchApi<Law[]>('/laws'),
-  getLegalTopics: () => fetchApi<LegalTopic[]>('/topics'),
-  getLawClauses: (lawId: string) => fetchApi<any[]>(`/laws/${lawId}/clauses`),
   getDocumentList: getLegalDocumentList,
   searchDocuments: searchLegalDocuments,
   getDocumentDetail: getLegalDocumentDetail,

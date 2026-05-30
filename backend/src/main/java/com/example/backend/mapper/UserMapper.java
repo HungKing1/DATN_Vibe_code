@@ -8,14 +8,6 @@ public class UserMapper {
     public static UserResponse toDto(User user) {
         if (user == null) return null;
 
-        UserResponse.ProgressDto progressDto = null;
-        if (user.getProgress() != null) {
-            progressDto = UserResponse.ProgressDto.builder()
-                    .lawsLearned(user.getProgress().getLawsLearned())
-                    .flashcardsCompleted(user.getProgress().getFlashcardsCompleted())
-                    .quizzesCompleted(user.getProgress().getQuizzesCompleted())
-                    .build();
-        }
 
         UserResponse.SettingsDto settingsDto = null;
         if (user.getSettings() != null) {
@@ -29,7 +21,7 @@ public class UserMapper {
                 .id(user.getId())
                 .email(user.getEmail())
                 .role(user.getRole())
-                .progress(progressDto)
+
                 .settings(settingsDto)
                 .build();
     }

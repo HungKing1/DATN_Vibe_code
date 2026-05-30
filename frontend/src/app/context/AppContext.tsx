@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
-import { Law, LegalTopic, Message, Citation, Notebook, Note, AppSettings, QueryMode } from '../types';
+import { Message, Citation, Notebook, Note, AppSettings, QueryMode } from '../types';
 
 import { legalService } from '../api/legalService';
 import { chatService } from '../api/chatService';
@@ -7,11 +7,7 @@ import { settingsService } from '../api/settingsService';
 import { useAuth } from './AuthContext';
 
 interface AppContextValue {
-  // Legal Knowledge Base
-  laws: Law[];
-  legalTopics: LegalTopic[];
-  activeLawId: string | null;
-  setActiveLawId: (id: string | null) => void;
+
 
   // Notebooks
   notebooks: Notebook[];
@@ -59,9 +55,7 @@ const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
-  const [laws, setLaws] = useState<Law[]>([]);
-  const [legalTopics, setLegalTopics] = useState<LegalTopic[]>([]);
-  const [activeLawId, setActiveLawId] = useState<string | null>(null);
+
 
   const [notebooks, setNotebooks] = useState<Notebook[]>([]);
   const [activeNotebookId, setActiveNotebookId] = useState<string>('');
@@ -79,7 +73,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>({
     aiModel: 'gpt-4o',
     responseStyle: 'detailed',
-    autoFlashcards: true,
     citationsEnabled: true,
     studyReminders: false,
     soundEffects: false,
@@ -104,21 +97,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Tải dữ liệu ban đầu từ Backend
     const fetchInitialData = async () => {
       try {
-        const [lawsData, topicsData, notebooksData, settingsData] = await Promise.all([
-          Object.keys(legalService).length ? legalService.getLaws().catch(() => []) : [],
-          Object.keys(legalService).length ? legalService.getLegalTopics().catch(() => []) : [], 
+        const [notebooksData, settingsData] = await Promise.all([
           chatService.getNotebooks().catch(() => []),
           settingsService.getSettings().catch(() => null)
         ]);
 
-        if (lawsData.length > 0) {
-          setLaws(lawsData);
-          setActiveLawId(lawsData[0].id);
-        }
-        
-        if (topicsData.length > 0) {
-          setLegalTopics(topicsData);
-        }
+
 
         if (notebooksData.length > 0) {
           setNotebooks(notebooksData);
@@ -323,10 +307,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider
       value={{
-        laws,
-        legalTopics,
-        activeLawId,
-        setActiveLawId,
+
         notebooks,
         activeNotebookId,
         setActiveNotebookId,
