@@ -6,7 +6,6 @@ import lombok.Data;
 @Data
 @Builder
 public class LegalDocumentSummaryResponse {
-    private String id;
     private String soKyHieu;
     private String tenDayDu;
     private String loaiVanBan;

@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface MessageRepository extends MongoRepository<Message, String> {
-    List<Message> findByNotebookIdOrderByCreatedAtAsc(String notebookId);
-    void deleteByNotebookId(String notebookId);
-    Optional<Message> findFirstByNotebookIdAndRoleOrderByCreatedAtDesc(String notebookId, String role);
+    List<Message> findByConversationIdOrderByCreatedAtAsc(String conversationId);
+    void deleteByConversationId(String conversationId);
+    Optional<Message> findFirstByConversationIdAndRoleOrderByCreatedAtDesc(String conversationId, String role);
 }

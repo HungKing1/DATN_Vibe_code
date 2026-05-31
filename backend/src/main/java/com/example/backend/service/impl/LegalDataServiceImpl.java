@@ -38,7 +38,6 @@ public class LegalDataServiceImpl implements LegalDataService {
     private LegalDocumentSummaryResponse mapToSummary(LegalDocument doc) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         return LegalDocumentSummaryResponse.builder()
-                .id(doc.getId())
                 .soKyHieu(doc.getSoKyHieu())
                 .tenDayDu(doc.getTenDayDu())
                 .loaiVanBan(doc.getLoaiVanBan())

@@ -35,7 +35,7 @@ backend/
         │   └── WebClientConfig.java   # WebClient bean cho gọi AI Server
         ├── controller/               # REST Controllers (tầng vào duy nhất)
         │   ├── AuthController.java        # /api/v1/auth/**
-        │   ├── NotebookController.java    # /api/v1/notebooks/**
+        │   ├── ConversationController.java    # /api/v1/conversations/**
         │   ├── ChatController.java        # /api/v1/chat
         │   ├── AdminController.java       # /api/v1/admin/** (ROLE_ADMIN)
         │   ├── LegalDataController.java   # /api/v1/legal/**
@@ -46,20 +46,20 @@ backend/
         │   ├── AiServerClient.java        # Gọi FastAPI (WebClient) — class quan trọng nhất
         │   ├── AuthService.java / impl/AuthServiceImpl.java
         │   ├── ChatService.java / impl/ChatServiceImpl.java
-        │   ├── NotebookService.java / impl/NotebookServiceImpl.java
+        │   ├── ConversationService.java / impl/ConversationServiceImpl.java
         │   ├── LegalDataService.java / impl/LegalDataServiceImpl.java
         │   └── UserService.java / impl/UserServiceImpl.java
         ├── entity/                   # MongoDB Documents
         │   ├── User.java              # users collection (có embedded Progress + Settings)
         │   ├── UserAuthSession.java   # user_auth_sessions (cookie session store)
-        │   ├── Notebook.java          # notebooks collection
+        │   ├── Conversation.java          # conversations collection
         │   ├── Message.java           # messages collection
 
         ├── repository/               # Spring Data MongoDB Repositories
         │   ├── UserRepository.java, UserAuthSessionRepository.java
-        │   └── NotebookRepository.java, MessageRepository.java
+        │   └── ConversationRepository.java, MessageRepository.java
         ├── dto/
-        │   ├── request/              # LoginRequest, RegisterRequest, ChatRequest, NotebookRequest...
+        │   ├── request/              # LoginRequest, RegisterRequest, ChatRequest, ConversationRequest...
         │   ├── response/             # ApiResponse<T>, UserResponse, SearchResponse
         │   └── ai/                   # DTOs cho trao đổi với AI Server
         │       ├── LawInfo.java           # { so_ky_hieu, ten_day_du, loai_van_ban, chunk_count }
@@ -90,7 +90,7 @@ backend/
 |---|---|---|
 | `AuthController` | `/api/v1/auth/**` | **Public** |
 | `AdminController` | `/api/v1/admin/**` | `ROLE_ADMIN` |
-| `NotebookController` | `/api/v1/notebooks/**` | Authenticated |
+| `ConversationController` | `/api/v1/conversations/**` | Authenticated |
 | `ChatController` | `/api/v1/chat` | Authenticated |
 | `LegalDataController` | `/api/v1/legal/**` | Authenticated |
 | `SearchController` | `/api/v1/search/**` | Authenticated |
@@ -105,15 +105,15 @@ POST /api/v1/auth/logout      — Xóa session + cookie
 GET  /api/v1/auth/me          — Lấy thông tin user hiện tại
 ```
 
-### Notebook + Chat
+### Conversation + Chat
 ```
-GET    /api/v1/notebooks               — Lấy danh sách notebook của user
-POST   /api/v1/notebooks               — Tạo notebook mới
-PUT    /api/v1/notebooks/{id}          — Cập nhật notebook
-DELETE /api/v1/notebooks/{id}          — Xóa notebook
-GET    /api/v1/notebooks/{id}/messages — Lấy lịch sử chat
-DELETE /api/v1/notebooks/{id}/messages — Xóa lịch sử chat
-GET    /api/v1/notebooks/{id}/suggestions — Lấy gợi ý câu hỏi
+GET    /api/v1/conversations               — Lấy danh sách conversation của user
+POST   /api/v1/conversations               — Tạo conversation mới
+PUT    /api/v1/conversations/{id}          — Cập nhật conversation
+DELETE /api/v1/conversations/{id}          — Xóa conversation
+GET    /api/v1/conversations/{id}/messages — Lấy lịch sử chat
+DELETE /api/v1/conversations/{id}/messages — Xóa lịch sử chat
+GET    /api/v1/conversations/{id}/suggestions — Lấy gợi ý câu hỏi
 POST   /api/v1/chat                    — Gửi tin nhắn (gọi AI Server)
 ```
 
@@ -248,9 +248,10 @@ java -jar target/backend-0.0.1-SNAPSHOT.jar
 > ⚠️ **Cập nhật phần này trước mỗi lần kết thúc phiên làm việc!**
 
 ### ✅ Đã hoàn thành
+- **Refactor (2026-05-31):** Đổi tên toàn bộ `Notebook` thành `Conversation` (ở các entity, controller, repository, services, và MongoDB collection).
 - Toàn bộ tầng Security: Cookie Session, CookieAuthFilter, Role-based access
 - Auth: register, login, logout, getMe
-- Notebook CRUD + Messages + Suggestions
+- Conversation CRUD + Messages + Suggestions
 - Chat endpoint (tích hợp AiServerClient)
 - **Chat mode routing**: `ChatRequest.mode` ('quick'/'agent') → `ChatServiceImpl` gọi đúng pipeline
   - `quick` → `AiServerClient.query()` (POST `/api/v1/query/`)

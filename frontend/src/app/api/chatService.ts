@@ -1,46 +1,40 @@
 import { fetchApi } from './apiClient';
-import { Notebook, Message, QueryMode } from '../types';
+import { Conversation, Message, QueryMode } from '../types';
 
 export const chatService = {
-  // Notebook operations
-  getNotebooks: () => fetchApi<Notebook[]>('/notebooks'),
+  // Conversation operations
+  getConversations: () => fetchApi<Conversation[]>('/conversations'),
 
-  createNotebook: (title: string, emoji: string) =>
-    fetchApi<Notebook>('/notebooks', {
+  createConversation: (title: string) =>
+    fetchApi<Conversation>('/conversations', {
       method: 'POST',
-      body: JSON.stringify({ title, emoji })
+      body: JSON.stringify({ title })
     }),
 
-  updateNotebook: (id: string, title: string) =>
-    fetchApi<Notebook>(`/notebooks/${id}`, {
+  updateConversation: (id: string, title: string) =>
+    fetchApi<Conversation>(`/conversations/${id}`, {
       method: 'PUT',
       body: JSON.stringify({ title })
     }),
 
-  deleteNotebook: (id: string) =>
-    fetchApi<void>(`/notebooks/${id}`, {
+  deleteConversation: (id: string) =>
+    fetchApi<void>(`/conversations/${id}`, {
       method: 'DELETE'
     }),
 
   // Chat/Messages operations
-  getMessages: (notebookId: string) =>
-    fetchApi<Message[]>(`/notebooks/${notebookId}/messages`),
+  getMessages: (conversationId: string) =>
+    fetchApi<Message[]>(`/conversations/${conversationId}/messages`),
 
   /**
    * Send a message with an explicit query mode.
-   * @param notebookId - active notebook
+   * @param conversationId - active conversation
    * @param content    - user message text
    * @param mode       - 'quick' → standard RAG | 'agent' → Multi-Agent LangGraph
    */
-  sendMessage: (notebookId: string, content: string, mode: QueryMode = 'quick') =>
+  sendMessage: (conversationId: string, content: string, mode: QueryMode = 'quick') =>
     fetchApi<Message>('/chat', {
       method: 'POST',
-      body: JSON.stringify({ notebookId, content, mode })
-    }),
-
-  // Có thể dùng endpoint này để clear tin nhắn của 1 notebook bên trong DB
-  clearChat: (notebookId: string) =>
-    fetchApi<void>(`/notebooks/${notebookId}/messages`, {
-      method: 'DELETE'
+      body: JSON.stringify({ conversationId, content, mode })
     })
 };

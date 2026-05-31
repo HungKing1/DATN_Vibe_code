@@ -42,7 +42,7 @@ frontend/
 │       ├── api/              # Toàn bộ logic gọi HTTP
 │       │   ├── apiClient.ts       # fetchApi() wrapper, MOCK_MODE toggle
 │       │   ├── auth.api.ts        # /auth/login, /auth/register, /auth/me, /auth/logout
-│       │   ├── chatService.ts     # Notebooks + Messages API
+│       │   ├── chatService.ts     # Conversations + Messages API
 │       │   ├── legalService.ts    # Laws + Topics API
 
 │       │   ├── settingsService.ts
@@ -50,11 +50,11 @@ frontend/
 │       │
 │       ├── context/          # React Context (state toàn app)
 │       │   ├── AuthContext.tsx    # useAuth() — user, isAuthenticated, isAdmin, login/logout
-│       │   └── AppContext.tsx     # useApp() — laws, notebooks, messages, notes, settings, layout
+│       │   └── AppContext.tsx     # useApp() — laws, conversations, messages, notes, settings, layout
 │       │
 │       ├── components/       # Components dùng chung
 │       │   ├── Layout.tsx         # Main app shell (Sidebar + Content + SourcePanel)
-│       │   ├── LeftSidebar.tsx    # Danh sách Notebooks, điều hướng
+│       │   ├── LeftSidebar.tsx    # Danh sách Conversations, điều hướng
 │       │   ├── ChatPanel.tsx      # Chat UI chính, streaming effect
 │       │   ├── SourcePanel.tsx    # Hiển thị Citations từ RAG
 
@@ -120,9 +120,9 @@ frontend/
 
 ### AppContext (`src/app/context/AppContext.tsx`)
 - Hook: `useApp()`
-- Quản lý: **Notebooks, Messages, Laws, Topics, Notes, Settings, Layout state**
+- Quản lý: **Conversations, Messages, Laws, Topics, Notes, Settings, Layout state**
 - Streaming AI response: giả lập bằng `setInterval` từ phía FE (khi BE hỗ trợ SSE thì thay).
-- `notebookMessages`: `Record<notebookId, Message[]>` — cache messages theo từng notebook.
+- `conversationMessages`: `Record<conversationId, Message[]>` — cache messages theo từng conversation.
 
 ---
 
@@ -148,7 +148,7 @@ const data = await fetchApi<ResponseType>('/endpoint', {
 | File | Chức năng |
 |---|---|
 | `auth.api.ts` | login, register, logout, getMe |
-| `chatService.ts` | getNotebooks, createNotebook, updateNotebook, deleteNotebook, getMessages, sendMessage, clearChat |
+| `chatService.ts` | getConversations, createConversation, updateConversation, deleteConversation, getMessages, sendMessage, clearChat |
 | `legalService.ts` | getDocumentList, searchDocuments, getDocumentDetail |
 | `adminService.ts` | quản lý ingestion Weaviate, danh sách laws |
 
@@ -196,7 +196,7 @@ adminApi.checkAiHealth()                     // GET /admin/ai-health
 // Entities cốt lõi của dự án
 Citation
 Message  // { id, role: 'user'|'ai', content, citations?, confidence?, suggestedQuestions?, isStreaming? }
-Notebook // { id, title, emoji, color, messageCount, createdAt }
+Conversation // { id, title, emoji, color, messageCount, createdAt }
 Note, UserProgress, AppSettings
 UserResponse // { id, email, role }  — từ auth.api.ts
 ```
@@ -238,11 +238,12 @@ npm run build
 > ⚠️ **Cập nhật phần này trước mỗi lần kết thúc phiên làm việc!**
 
 ### ✅ Đã hoàn thành
+- **Refactor (2026-05-31):** Đổi tên toàn bộ `Notebook` thành `Conversation` (interfaces, services, context state) để phản ánh đúng ngữ nghĩa ứng dụng chat.
 - Toàn bộ routing (Auth, Main App, Admin) với Route Guards
 - AuthContext: đăng nhập/đăng xuất bằng cookie session
-- AppContext: quản lý Notebooks, Chat, streaming effect
+- AppContext: quản lý Conversations, Chat, streaming effect
 - UI chính: Layout, LeftSidebar, ChatPanel, SourcePanel
-- Chức năng Note, Notebooks
+- Chức năng Note, Conversations
 - Admin pages: AdminDashboard, IngestionPage, CollectionRegistryPage
 - Mock system (MOCK_MODE) để dev offline
 - **Chat mode selector**: 2 nút "Nhanh" (⚡) và "Tư duy" (🧠) trong ChatPanel

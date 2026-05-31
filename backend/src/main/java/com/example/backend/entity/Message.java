@@ -24,7 +24,7 @@ public class Message {
     private String id;
 
     @Indexed
-    private String notebookId;
+    private String conversationId;
 
     private String role; // user or ai
 

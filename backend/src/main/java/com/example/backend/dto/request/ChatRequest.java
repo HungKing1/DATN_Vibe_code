@@ -8,7 +8,7 @@ public class ChatRequest {
     @NotBlank(message = "Content is required")
     private String content;
 
-    private String notebookId; // If null, create new
+    private String conversationId; // If null, create new
 
     /**
      * Query mode: "quick" → standard RAG (POST /api/v1/query/)

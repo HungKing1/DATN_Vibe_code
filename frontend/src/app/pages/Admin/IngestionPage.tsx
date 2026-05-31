@@ -180,7 +180,7 @@ export function IngestionPage() {
                     const isVectorized = laws.some(law => law.so_ky_hieu === doc.soKyHieu);
                     return (
                     <TableRow 
-                      key={doc.id} 
+                      key={doc.soKyHieu} 
                       className={`transition-colors ${isVectorized ? 'bg-muted/10 opacity-70 cursor-default' : 'cursor-pointer hover:bg-muted/30'}`}
                       onClick={() => !isVectorized && handleRowClick(doc.tenDayDu)}
                     >

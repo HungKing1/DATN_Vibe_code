@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
-import { Message, Citation, Notebook, Note, AppSettings, QueryMode } from '../types';
+import { Message, Citation, Conversation, Note, AppSettings, QueryMode } from '../types';
 
 import { legalService } from '../api/legalService';
 import { chatService } from '../api/chatService';
@@ -9,14 +9,14 @@ import { useAuth } from './AuthContext';
 interface AppContextValue {
 
 
-  // Notebooks
-  notebooks: Notebook[];
-  activeNotebookId: string;
-  setActiveNotebookId: (id: string) => void;
-  createNotebook: (title: string, emoji: string) => Promise<void>;
-  renameNotebook: (id: string, title: string) => Promise<void>;
-  deleteNotebook: (id: string) => Promise<void>;
-  notebookMessages: Record<string, Message[]>;
+  // Conversations
+  conversations: Conversation[];
+  activeConversationId: string;
+  setActiveConversationId: (id: string) => void;
+  createConversation: (title: string) => Promise<void>;
+  renameConversation: (id: string, title: string) => Promise<void>;
+  deleteConversation: (id: string) => Promise<void>;
+  conversationMessages: Record<string, Message[]>;
 
   // Chat
   messages: Message[];
@@ -24,7 +24,6 @@ interface AppContextValue {
   streamingMsgId: string | null;
   streamingContent: string;
   sendMessage: (content: string, mode?: QueryMode) => Promise<void>;
-  clearChat: () => Promise<void>;
 
   // Citations
   currentCitations: Citation[];
@@ -45,10 +44,6 @@ interface AppContextValue {
   toggleSidebar: () => void;
   sourcePanelCollapsed: boolean;
   toggleSourcePanel: () => void;
-
-  // Command palette
-  commandPaletteOpen: boolean;
-  setCommandPaletteOpen: (open: boolean) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -57,9 +52,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
 
 
-  const [notebooks, setNotebooks] = useState<Notebook[]>([]);
-  const [activeNotebookId, setActiveNotebookId] = useState<string>('');
-  const [notebookMessages, setNotebookMessages] = useState<Record<string, Message[]>>({});
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string>('');
+  const [conversationMessages, setConversationMessages] = useState<Record<string, Message[]>>({});
 
   const [isAIThinking, setIsAIThinking] = useState(false);
   const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
@@ -81,12 +76,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sourcePanelCollapsed, setSourcePanelCollapsed] = useState(false);
-  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   const messageIdCounter = useRef(100);
 
-  // Derived: messages for active notebook
-  const messages = notebookMessages[activeNotebookId] ?? [];
+  // Derived: messages for active conversation
+  const messages = conversationMessages[activeConversationId] ?? [];
 
   // ======================
   // INITIAL DATA FETCHING
@@ -97,17 +91,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Tải dữ liệu ban đầu từ Backend
     const fetchInitialData = async () => {
       try {
-        const [notebooksData, settingsData] = await Promise.all([
-          chatService.getNotebooks().catch(() => []),
+        const [conversationsData, settingsData] = await Promise.all([
+          chatService.getConversations().catch(() => []),
           settingsService.getSettings().catch(() => null)
         ]);
 
 
 
-        if (notebooksData.length > 0) {
-          setNotebooks(notebooksData);
-          // Do not auto-select the first notebook so user sees the general "New Chat" page
-          setActiveNotebookId('');
+        if (conversationsData.length > 0) {
+          setConversations(conversationsData);
+          // Do not auto-select the first conversation so user sees the general "New Chat" page
+          setActiveConversationId('');
         }
 
         if (settingsData) {
@@ -121,76 +115,76 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     fetchInitialData();
   }, [isAuthenticated]);
 
-  // Fetch messages whenever active notebook changes
+  // Fetch messages whenever active conversation changes
   useEffect(() => {
-    if (activeNotebookId && !notebookMessages[activeNotebookId]) {
-      chatService.getMessages(activeNotebookId)
-        .then(msgs => setNotebookMessages(prev => ({ ...prev, [activeNotebookId]: msgs })))
-        .catch(() => setNotebookMessages(prev => ({ ...prev, [activeNotebookId]: [] })));
+    if (activeConversationId && !conversationMessages[activeConversationId]) {
+      chatService.getMessages(activeConversationId)
+        .then(msgs => setConversationMessages(prev => ({ ...prev, [activeConversationId]: msgs })))
+        .catch(() => setConversationMessages(prev => ({ ...prev, [activeConversationId]: [] })));
     }
-  }, [activeNotebookId, notebookMessages]);
+  }, [activeConversationId, conversationMessages]);
 
   // ======================
   // ACTIONS
   // ======================
 
-  const createNotebook = useCallback(async (title: string, emoji: string) => {
+  const createConversation = useCallback(async (title: string) => {
     try {
-      const newNb = await chatService.createNotebook(title, emoji);
-      setNotebooks(prev => [...prev, newNb]);
-      setNotebookMessages(prev => ({ ...prev, [newNb.id]: [] }));
-      setActiveNotebookId(newNb.id);
+      const newNb = await chatService.createConversation(title);
+      setConversations(prev => [...prev, newNb]);
+      setConversationMessages(prev => ({ ...prev, [newNb.id]: [] }));
+      setActiveConversationId(newNb.id);
     } catch (e) {
       console.error(e);
       // Fallback cho UI nếu chưa có backend thì dùng logic local
     }
   }, []);
 
-  const renameNotebook = useCallback(async (id: string, title: string) => {
+  const renameConversation = useCallback(async (id: string, title: string) => {
     try {
-      const updated = await chatService.updateNotebook(id, title);
-      setNotebooks(prev => prev.map(nb => nb.id === id ? updated : nb));
+      const updated = await chatService.updateConversation(id, title);
+      setConversations(prev => prev.map(nb => nb.id === id ? updated : nb));
     } catch (e) {
       console.error(e);
     }
   }, []);
 
-  const deleteNotebook = useCallback(async (id: string) => {
+  const deleteConversation = useCallback(async (id: string) => {
     try {
-      await chatService.deleteNotebook(id);
-      setNotebooks(prev => {
+      await chatService.deleteConversation(id);
+      setConversations(prev => {
         const remaining = prev.filter(nb => nb.id !== id);
         return remaining;
       });
-      setNotebookMessages(prev => {
+      setConversationMessages(prev => {
         const next = { ...prev };
         delete next[id];
         return next;
       });
-      setActiveNotebookId(prev => {
+      setActiveConversationId(prev => {
         if (prev !== id) return prev;
-        const remaining = notebooks.filter(nb => nb.id !== id);
+        const remaining = conversations.filter(nb => nb.id !== id);
         return remaining.length > 0 ? remaining[0].id : '';
       });
     } catch (e) {
       console.error(e);
     }
-  }, [notebooks]);
+  }, [conversations]);
 
   const sendMessage = useCallback(
     async (content: string, mode: QueryMode = 'quick') => {
-      let targetNbId = activeNotebookId;
-      
-      // Auto-create a new notebook if there is no active one
+      let targetNbId = activeConversationId;
+
+      // Auto-create a new conversation if there is no active one
       if (!targetNbId) {
         try {
-          const newNb = await chatService.createNotebook('New Conversation', '💬');
-          setNotebooks(prev => [...prev, newNb]);
-          setNotebookMessages(prev => ({ ...prev, [newNb.id]: [] }));
-          setActiveNotebookId(newNb.id);
+          const newNb = await chatService.createConversation('New Conversation');
+          setConversations(prev => [...prev, newNb]);
+          setConversationMessages(prev => ({ ...prev, [newNb.id]: [] }));
+          setActiveConversationId(newNb.id);
           targetNbId = newNb.id;
         } catch (e) {
-          console.error("Failed to auto-create notebook", e);
+          console.error("Failed to auto-create conversation", e);
           return;
         }
       }
@@ -203,25 +197,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       };
 
       // Cập nhật giao diện người dùng ngay lập tức
-      setNotebookMessages(prev => ({
+      setConversationMessages(prev => ({
         ...prev,
         [targetNbId]: [...(prev[targetNbId] ?? []), userMsg],
       }));
-      setNotebooks(prev =>
+      setConversations(prev =>
         prev.map(nb => nb.id === targetNbId ? { ...nb, messageCount: nb.messageCount + 1 } : nb)
       );
-      
+
       setIsAIThinking(true);
 
       try {
         // Gửi qua API
         const responseMsg = await chatService.sendMessage(targetNbId, content, mode);
-        
+
         setIsAIThinking(false);
 
         // Khởi tạo message streaming giả để giữ UI effect
         const uiAiMsg = { ...responseMsg, isStreaming: true };
-        setNotebookMessages(prev => ({
+        setConversationMessages(prev => ({
           ...prev,
           [targetNbId]: [...(prev[targetNbId] ?? []), uiAiMsg],
         }));
@@ -245,9 +239,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             clearInterval(interval);
             setStreamingMsgId(null);
             setStreamingContent('');
-            setNotebookMessages(prev => ({
+            setConversationMessages(prev => ({
               ...prev,
-              [activeNotebookId]: (prev[activeNotebookId] ?? []).map(m =>
+              [activeConversationId]: (prev[activeConversationId] ?? []).map(m =>
                 m.id === responseMsg.id ? { ...m, isStreaming: false } : m
               ),
             }));
@@ -259,20 +253,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setIsAIThinking(false);
       }
     },
-    [activeNotebookId]
+    [activeConversationId]
   );
 
-  const clearChat = useCallback(async () => {
-    if (!activeNotebookId) return;
-    try {
-      await chatService.clearChat(activeNotebookId);
-      setNotebookMessages(prev => ({ ...prev, [activeNotebookId]: [] }));
-      setCurrentCitations([]);
-      setStreamingMsgId(null);
-    } catch(e) {
-      console.error(e);
-    }
-  }, [activeNotebookId]);
 
   const addNote = useCallback((note: Omit<Note, 'id' | 'createdAt'>) => {
     const newNote: Note = {
@@ -308,19 +291,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider
       value={{
 
-        notebooks,
-        activeNotebookId,
-        setActiveNotebookId,
-        createNotebook,
-        renameNotebook,
-        deleteNotebook,
-        notebookMessages,
+        conversations,
+        activeConversationId,
+        setActiveConversationId,
+        createConversation,
+        renameConversation,
+        deleteConversation,
+        conversationMessages,
         messages,
         isAIThinking,
         streamingMsgId,
         streamingContent,
         sendMessage,
-        clearChat,
         currentCitations,
         notes,
         addNote,
@@ -333,8 +315,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         toggleSidebar,
         sourcePanelCollapsed,
         toggleSourcePanel,
-        commandPaletteOpen,
-        setCommandPaletteOpen,
       }}
     >
       {children}
@@ -347,4 +327,3 @@ export function useApp() {
   if (!ctx) throw new Error('useApp must be used within AppProvider');
   return ctx;
 }
-

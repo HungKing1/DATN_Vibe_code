@@ -7,7 +7,7 @@ import {
 import { useApp } from '../context/AppContext';
 
 export function SourcePanel() {
-  const { currentCitations, sourcePanelCollapsed, toggleSourcePanel, laws } = useApp();
+  const { currentCitations, sourcePanelCollapsed, toggleSourcePanel } = useApp();
   const [activeChunk, setActiveChunk] = useState<string | null>(null);
 
   return (
@@ -64,7 +64,6 @@ export function SourcePanel() {
                     </div>
                   ) : (
                     currentCitations.map((citation, idx) => {
-                      const doc = laws.find(d => d.lawName === citation.lawName);
                       const isActive = activeChunk === citation.id;
                       return (
                         <motion.div
@@ -96,11 +95,6 @@ export function SourcePanel() {
                               <Hash className="w-2.5 h-2.5" />
                               Chunk {citation.chunkIndex}
                             </span>
-                            {doc && (
-                              <span className="px-2 py-0.5 bg-muted rounded-full text-xs text-muted-foreground capitalize">
-                                {doc.type}
-                              </span>
-                            )}
                           </div>
                           <div className="px-3 pb-3">
                             <div className={`text-xs leading-relaxed text-muted-foreground rounded-lg p-2.5 transition-all ${

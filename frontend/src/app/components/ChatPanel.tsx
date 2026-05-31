@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Send, Mic, ImagePlus, ThumbsUp, ThumbsDown, Copy, RefreshCw,
-  Sparkles, BarChart2, Zap, User, Bot, ChevronDown,
-  Plus, Check, Brain
+  Send, ThumbsUp, ThumbsDown, Copy, RefreshCw,
+  Sparkles, BarChart2, Zap, User, Bot,
+  Check, Brain
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useApp } from '../context/AppContext';
@@ -40,10 +40,11 @@ function TypingIndicator({ mode }: { mode: QueryMode }) {
   );
 }
 
-function MessageBubble({ message, isStreaming, streamContent }: {
+function MessageBubble({ message, isStreaming, streamContent, currentMode }: {
   message: Message;
   isStreaming?: boolean;
   streamContent?: string;
+  currentMode: QueryMode;
 }) {
   const [copied, setCopied] = useState(false);
   const { sendMessage } = useApp();
@@ -122,7 +123,7 @@ function MessageBubble({ message, isStreaming, streamContent }: {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.1 + idx * 0.05 }}
-                onClick={() => sendMessage(q, 'quick')}
+                onClick={() => sendMessage(q, currentMode)}
                 className="px-3 py-1.5 bg-card border border-border rounded-full text-xs text-muted-foreground hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all duration-150"
               >
                 {q}
@@ -135,139 +136,16 @@ function MessageBubble({ message, isStreaming, streamContent }: {
   );
 }
 
-function NotebookSelector() {
-  const { notebooks, activeNotebookId, setActiveNotebookId, createNotebook } = useApp();
-  const [open, setOpen] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
-  const activeNb = notebooks.find(nb => nb.id === activeNotebookId);
-
-  const EMOJIS = ['🧠', '⚡', '📝', '🎯', '🔬', '💡', '📚', '🚀'];
-  const [selectedEmoji, setSelectedEmoji] = useState('🧠');
-
-  const NB_COLORS: Record<string, string> = {
-    blue: 'bg-blue-100 text-blue-700',
-    violet: 'bg-violet-100 text-violet-700',
-    emerald: 'bg-emerald-100 text-emerald-700',
-    amber: 'bg-amber-100 text-amber-700',
-    rose: 'bg-rose-100 text-rose-700',
-  };
-
-  const handleCreate = () => {
-    if (!newTitle.trim()) return;
-    createNotebook(newTitle.trim(), selectedEmoji);
-    setNewTitle('');
-    setCreating(false);
-    setOpen(false);
-  };
-
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen(p => !p)}
-        className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/60 border border-border rounded-full hover:bg-accent transition-colors"
-      >
-        <span style={{ fontSize: '13px' }}>{activeNb?.emoji}</span>
-        <span className="text-xs text-foreground max-w-[120px] truncate">{activeNb?.title}</span>
-        <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <>
-            <div className="fixed inset-0 z-10" onClick={() => { setOpen(false); setCreating(false); }} />
-            <motion.div
-              initial={{ opacity: 0, y: -8, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.96 }}
-              transition={{ duration: 0.15 }}
-              className="absolute top-full left-0 mt-2 w-64 bg-card border border-border rounded-xl shadow-xl z-20 overflow-hidden"
-            >
-              <div className="p-2">
-                <p className="text-xs text-muted-foreground px-2 py-1 uppercase tracking-wider">Notebooks</p>
-                {notebooks.map(nb => (
-                  <button
-                    key={nb.id}
-                    onClick={() => { setActiveNotebookId(nb.id); setOpen(false); }}
-                    className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${nb.id === activeNotebookId ? 'bg-blue-50' : 'hover:bg-accent'
-                      }`}
-                  >
-                    <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm flex-shrink-0 ${NB_COLORS[nb.color] ?? NB_COLORS.blue}`}>
-                      {nb.emoji}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-foreground truncate">{nb.title}</p>
-                      <p className="text-xs text-muted-foreground">{nb.messageCount} messages</p>
-                    </div>
-                    {nb.id === activeNotebookId && <Check className="w-3.5 h-3.5 text-blue-500" />}
-                  </button>
-                ))}
-              </div>
-
-              {creating ? (
-                <div className="px-3 pb-3 border-t border-border pt-2">
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {EMOJIS.map(e => (
-                      <button
-                        key={e}
-                        onClick={() => setSelectedEmoji(e)}
-                        className={`w-6 h-6 rounded flex items-center justify-center text-sm transition-all ${selectedEmoji === e ? 'bg-blue-100 ring-1 ring-blue-400' : 'hover:bg-accent'
-                          }`}
-                      >
-                        {e}
-                      </button>
-                    ))}
-                  </div>
-                  <input
-                    type="text"
-                    value={newTitle}
-                    onChange={e => setNewTitle(e.target.value)}
-                    placeholder="Notebook name..."
-                    className="w-full bg-muted px-3 py-1.5 rounded-lg text-xs text-foreground placeholder:text-muted-foreground outline-none border border-border focus:border-blue-400 transition-colors"
-                    autoFocus
-                    onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') setCreating(false); }}
-                  />
-                  <div className="flex gap-2 mt-2">
-                    <button onClick={() => setCreating(false)} className="flex-1 py-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-lg transition-colors">
-                      Cancel
-                    </button>
-                    <button onClick={handleCreate} disabled={!newTitle.trim()} className="flex-1 py-1.5 text-xs bg-gradient-to-r from-blue-500 to-violet-600 text-white rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
-                      Create
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="px-2 pb-2 border-t border-border pt-2">
-                  <button
-                    onClick={() => setCreating(true)}
-                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors text-left"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span className="text-xs">New notebook</span>
-                  </button>
-                </div>
-              )}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
 export function ChatPanel() {
   const {
-    messages, isAIThinking, sendMessage, clearChat,
+    messages, isAIThinking, sendMessage,
     streamingMsgId, streamingContent
   } = useApp();
   const [input, setInput] = useState('');
   const [queryMode, setQueryMode] = useState<QueryMode>('quick');
-  const [isRecording, setIsRecording] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const navigate = useNavigate();
-
-
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -295,43 +173,8 @@ export function ChatPanel() {
     "Explain like I'm a beginner",
   ];
 
-  const MODES = [
-    { id: 'chat', label: 'Chat', icon: <Sparkles className="w-3.5 h-3.5" /> },
-  ];
-
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-card flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <NotebookSelector />
-
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-0.5 bg-muted rounded-full p-0.5">
-            {MODES.map(mode => (
-              <button
-                key={mode.id}
-                onClick={() => mode.path && navigate(mode.path)}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs transition-all ${mode.id === 'chat'
-                    ? 'bg-white shadow-sm text-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                  }`}
-              >
-                {mode.icon}
-                <span className="hidden sm:inline">{mode.label}</span>
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={clearChat}
-            className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-accent transition-colors"
-          >
-            Clear
-          </button>
-        </div>
-      </div>
 
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
@@ -353,7 +196,7 @@ export function ChatPanel() {
                 {quickPrompts.map((prompt, idx) => (
                   <button
                     key={idx}
-                    onClick={() => sendMessage(prompt, 'quick')}
+                    onClick={() => sendMessage(prompt, queryMode)}
                     className="px-3 py-2.5 text-left bg-card border border-border rounded-xl text-xs text-muted-foreground hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all duration-150"
                   >
                     {prompt}
@@ -369,6 +212,7 @@ export function ChatPanel() {
                   message={msg}
                   isStreaming={msg.id === streamingMsgId}
                   streamContent={msg.id === streamingMsgId ? streamingContent : undefined}
+                  currentMode={queryMode}
                 />
               ))}
               {isAIThinking && <TypingIndicator mode={queryMode} />}
@@ -393,23 +237,7 @@ export function ChatPanel() {
           />
           <div className="flex items-center justify-between px-3 pb-2.5">
             <div className="flex items-center gap-1">
-              <button
-                onClick={() => setIsRecording(p => !p)}
-                className={`w-8 h-8 flex items-center justify-center rounded-full transition-all ${isRecording
-                    ? 'bg-red-100 text-red-500 animate-pulse'
-                    : 'hover:bg-accent text-muted-foreground hover:text-foreground'
-                  }`}
-                title="Voice input"
-              >
-                <Mic className="w-4 h-4" />
-              </button>
-              <label
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                title="Attach image"
-              >
-                <ImagePlus className="w-4 h-4" />
-                <input type="file" accept="image/*" className="hidden" />
-              </label>
+
 
               {/* Mode selector: Nhanh / Tư duy */}
               <div className="flex items-center gap-0.5 ml-1 bg-muted rounded-full p-0.5">
@@ -418,8 +246,8 @@ export function ChatPanel() {
                   onClick={() => setQueryMode('quick')}
                   title="Nhanh — RAG tiêu chuẩn"
                   className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${queryMode === 'quick'
-                      ? 'bg-white shadow-sm text-blue-600'
-                      : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-white shadow-sm text-blue-600'
+                    : 'text-muted-foreground hover:text-foreground'
                     }`}
                 >
                   <Zap className="w-3 h-3" />
@@ -430,8 +258,8 @@ export function ChatPanel() {
                   onClick={() => setQueryMode('agent')}
                   title="Tư duy — Multi-Agent LangGraph"
                   className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${queryMode === 'agent'
-                      ? 'bg-white shadow-sm text-violet-600'
-                      : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-white shadow-sm text-violet-600'
+                    : 'text-muted-foreground hover:text-foreground'
                     }`}
                 >
                   <Brain className="w-3 h-3" />
@@ -447,8 +275,8 @@ export function ChatPanel() {
                 onClick={handleSend}
                 disabled={!input.trim() || isAIThinking}
                 className={`w-8 h-8 flex items-center justify-center rounded-full transition-all ${input.trim() && !isAIThinking
-                    ? 'bg-gradient-to-br from-blue-500 to-violet-600 text-white hover:opacity-90 shadow-sm'
-                    : 'bg-muted text-muted-foreground cursor-not-allowed'
+                  ? 'bg-gradient-to-br from-blue-500 to-violet-600 text-white hover:opacity-90 shadow-sm'
+                  : 'bg-muted text-muted-foreground cursor-not-allowed'
                   }`}
               >
                 <Send className="w-4 h-4" />
@@ -456,9 +284,6 @@ export function ChatPanel() {
             </div>
           </div>
         </div>
-        <p className="text-center text-xs text-muted-foreground mt-2">
-          Grounded in all legal documents · Shift+Enter for new line · ⌘K for commands
-        </p>
       </div>
     </div>
   );

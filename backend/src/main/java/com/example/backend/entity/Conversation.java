@@ -16,8 +16,8 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "notebooks")
-public class Notebook {
+@Document(collection = "conversations")
+public class Conversation {
 
     @Id
     private String id;
@@ -27,11 +27,6 @@ public class Notebook {
 
     private String title;
 
-    @Builder.Default
-    private String emoji = "⚖️";
-
-    @Builder.Default
-    private String color = "blue";
 
     @Builder.Default
     private int messageCount = 0;

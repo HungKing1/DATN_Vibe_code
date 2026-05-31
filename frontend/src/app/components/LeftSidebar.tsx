@@ -8,17 +8,17 @@ import {
 import { useNavigate, useLocation } from 'react-router';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { Notebook } from '../types';
+import { Conversation } from '../types';
 
-function NotebookItem({
-  notebook,
+function ConversationItem({
+  conversation,
   isActive,
   onClick,
   onRename,
   onDelete,
   collapsed
 }: {
-  notebook: Notebook;
+  conversation: Conversation;
   isActive: boolean;
   onClick: () => void;
   onRename: (newTitle: string) => void;
@@ -26,13 +26,13 @@ function NotebookItem({
   collapsed: boolean;
 }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState(notebook.title);
+  const [editTitle, setEditTitle] = useState(conversation.title);
 
   const handleSave = () => {
     if (editTitle.trim()) {
       onRename(editTitle.trim());
     } else {
-      setEditTitle(notebook.title);
+      setEditTitle(conversation.title);
     }
     setIsEditing(false);
   };
@@ -47,12 +47,12 @@ function NotebookItem({
       onClick={() => {
         if (!isEditing) onClick();
       }}
-      title={collapsed ? notebook.title : undefined}
+      title={collapsed ? conversation.title : undefined}
     >
-      <div className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 text-xs bg-${notebook.color}-100`}>
-        {notebook.emoji}
+      <div className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 text-xs bg-blue-100`}>
+        💬
       </div>
-      
+
       {!collapsed && (
         <div className="flex-1 min-w-0">
           {isEditing ? (
@@ -66,7 +66,7 @@ function NotebookItem({
                 onKeyDown={e => {
                   if (e.key === 'Enter') handleSave();
                   if (e.key === 'Escape') {
-                    setEditTitle(notebook.title);
+                    setEditTitle(conversation.title);
                     setIsEditing(false);
                   }
                 }}
@@ -75,13 +75,13 @@ function NotebookItem({
               <button onClick={(e) => { e.stopPropagation(); handleSave(); }} className="text-emerald-500 hover:text-emerald-600">
                 <Check className="w-3.5 h-3.5" />
               </button>
-              <button onClick={(e) => { e.stopPropagation(); setIsEditing(false); setEditTitle(notebook.title); }} className="text-red-500 hover:text-red-600">
+              <button onClick={(e) => { e.stopPropagation(); setIsEditing(false); setEditTitle(conversation.title); }} className="text-red-500 hover:text-red-600">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
           ) : (
             <p className="text-xs truncate pr-8">
-              {notebook.title}
+              {conversation.title}
             </p>
           )}
         </div>
@@ -111,9 +111,8 @@ export function LeftSidebar() {
   const { logout } = useAuth();
   const {
     sidebarCollapsed, toggleSidebar,
-    setCommandPaletteOpen,
-    notebooks, activeNotebookId, setActiveNotebookId,
-    createNotebook, renameNotebook, deleteNotebook
+    conversations, activeConversationId, setActiveConversationId,
+    createConversation, renameConversation, deleteConversation
   } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
@@ -196,7 +195,7 @@ export function LeftSidebar() {
           <div className="flex items-center justify-between px-3 pb-1 flex-shrink-0">
             <span className="text-xs text-muted-foreground uppercase tracking-wider">Chat History</span>
             <button
-              onClick={() => createNotebook('New Conversation', '💬')}
+              onClick={() => createConversation('New Conversation')}
               className="text-xs flex items-center gap-1 text-blue-500 hover:text-blue-600 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -206,23 +205,23 @@ export function LeftSidebar() {
         )}
         
         <div className="flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin flex flex-col gap-0.5">
-          {notebooks.map(nb => (
-            <NotebookItem
+          {conversations.map(nb => (
+            <ConversationItem
               key={nb.id}
-              notebook={nb}
-              isActive={nb.id === activeNotebookId}
+              conversation={nb}
+              isActive={nb.id === activeConversationId}
               onClick={() => {
-                setActiveNotebookId(nb.id);
+                setActiveConversationId(nb.id);
                 navigate('/');
               }}
-              onRename={(newTitle) => renameNotebook(nb.id, newTitle)}
-              onDelete={() => deleteNotebook(nb.id)}
+              onRename={(newTitle) => renameConversation(nb.id, newTitle)}
+              onDelete={() => deleteConversation(nb.id)}
               collapsed={sidebarCollapsed}
             />
           ))}
           {sidebarCollapsed && (
              <button
-             onClick={() => createNotebook('New Chat', '💬')}
+             onClick={() => createConversation('New Chat')}
              className="w-8 h-8 mx-auto mt-2 rounded-lg flex items-center justify-center hover:bg-accent text-muted-foreground transition-colors border border-dashed border-border"
              title="New Chat"
            >

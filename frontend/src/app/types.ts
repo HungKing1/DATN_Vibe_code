@@ -27,21 +27,13 @@ export interface Message {
 
 
 
-export interface UserProgress {
-  userId: string;
-  documentsLearned: number;
-  studyTimeMinutes: number;
-  weeklyActivity: { day: string; minutes: number }[];
-  topicsExplored: number;
-}
 
-export interface Notebook {
+
+export interface Conversation {
   id: string;
   title: string;
-  emoji: string;
   createdAt: string;
   messageCount: number;
-  color: string;
 }
 
 export interface Note {
@@ -63,7 +55,6 @@ export interface AppSettings {
 }
 
 export interface LegalDocumentSummary {
-  id: string;
   soKyHieu: string;
   tenDayDu: string;
   loaiVanBan: string;

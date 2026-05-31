@@ -6,9 +6,9 @@ import com.example.backend.dto.ai.RAGQueryRequest;
 import com.example.backend.dto.ai.RAGResponse;
 import com.example.backend.dto.request.ChatRequest;
 import com.example.backend.entity.Message;
-import com.example.backend.entity.Notebook;
+import com.example.backend.entity.Conversation;
 import com.example.backend.repository.MessageRepository;
-import com.example.backend.repository.NotebookRepository;
+import com.example.backend.repository.ConversationRepository;
 import com.example.backend.service.AiServerClient;
 import com.example.backend.service.ChatService;
 import lombok.RequiredArgsConstructor;
@@ -24,29 +24,29 @@ import java.util.stream.Collectors;
 public class ChatServiceImpl implements ChatService {
 
     private final MessageRepository messageRepository;
-    private final NotebookRepository notebookRepository;
+    private final ConversationRepository conversationRepository;
     private final AiServerClient aiServerClient;
 
     @Override
     public Message processChat(String userId, ChatRequest request) {
-        String notebookId = request.getNotebookId();
-        Notebook notebook;
+        String conversationId = request.getConversationId();
+        Conversation conversation;
 
-        if (notebookId == null || notebookId.isEmpty()) {
-            notebook = Notebook.builder()
+        if (conversationId == null || conversationId.isEmpty()) {
+            conversation = Conversation.builder()
                     .userId(userId)
                     .title("New Chat")
                     .build();
-            notebook = notebookRepository.save(notebook);
-            notebookId = notebook.getId();
+            conversation = conversationRepository.save(conversation);
+            conversationId = conversation.getId();
         } else {
-            notebook = notebookRepository.findById(notebookId)
-                    .orElseThrow(() -> new IllegalArgumentException("Notebook not found"));
+            conversation = conversationRepository.findById(conversationId)
+                    .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
         }
 
         // Save User Message
         Message userMessage = Message.builder()
-                .notebookId(notebookId)
+                .conversationId(conversationId)
                 .role("user")
                 .content(request.getContent())
                 .build();
@@ -55,14 +55,14 @@ public class ChatServiceImpl implements ChatService {
         // Route to correct AI Server pipeline based on mode
         boolean isAgentMode = "agent".equalsIgnoreCase(request.getMode());
         Message aiMessage = isAgentMode
-                ? processAgentQuery(notebookId, request.getContent())
-                : processQuickQuery(notebookId, request.getContent());
+                ? processAgentQuery(conversationId, request.getContent())
+                : processQuickQuery(conversationId, request.getContent());
 
         aiMessage = messageRepository.save(aiMessage);
 
-        // Update Notebook message count
-        notebook.setMessageCount(notebook.getMessageCount() + 2);
-        notebookRepository.save(notebook);
+        // Update Conversation message count
+        conversation.setMessageCount(conversation.getMessageCount() + 2);
+        conversationRepository.save(conversation);
 
         return aiMessage;
     }
@@ -75,7 +75,7 @@ public class ChatServiceImpl implements ChatService {
      * Standard RAG pipeline — calls POST /api/v1/query/ on AI Server.
      * Fast response: Query Rewrite → Hybrid Search → Rerank → LLM Generate.
      */
-    private Message processQuickQuery(String notebookId, String content) {
+    private Message processQuickQuery(String conversationId, String content) {
         try {
             RAGQueryRequest ragRequest = RAGQueryRequest.builder()
                     .query(content)
@@ -102,9 +102,9 @@ public class ChatServiceImpl implements ChatService {
                         .orElse(0.0)
                     : null;
 
-            log.info("Quick RAG response generated for notebook: {}", notebookId);
+            log.info("Quick RAG response generated for conversation: {}", conversationId);
             return Message.builder()
-                    .notebookId(notebookId)
+                    .conversationId(conversationId)
                     .role("ai")
                     .content(ragResponse.getAnswer())
                     .citations(citations)
@@ -116,7 +116,7 @@ public class ChatServiceImpl implements ChatService {
 
         } catch (Exception e) {
             log.error("AI Server unavailable (quick mode), returning fallback: {}", e.getMessage());
-            return buildFallbackMessage(notebookId, content);
+            return buildFallbackMessage(conversationId, content);
         }
     }
 
@@ -124,7 +124,7 @@ public class ChatServiceImpl implements ChatService {
      * Multi-Agent RAG pipeline — calls POST /api/v1/query/agent on AI Server.
      * Deep reasoning: MasterLawyerAgent → parallel ParalegalAgents → synthesize.
      */
-    private Message processAgentQuery(String notebookId, String content) {
+    private Message processAgentQuery(String conversationId, String content) {
         try {
             AgentQueryRequest agentRequest = AgentQueryRequest.builder()
                     .question(content)   // AI Server field is "question", not "query"
@@ -132,8 +132,8 @@ public class ChatServiceImpl implements ChatService {
 
             AgentQueryResponse agentResponse = aiServerClient.agentQuery(agentRequest);
 
-            log.info("Multi-Agent RAG response generated for notebook: {}, iterations: {}",
-                    notebookId, agentResponse != null ? agentResponse.getIterations() : 0);
+            log.info("Multi-Agent RAG response generated for conversation: {}, iterations: {}",
+                    conversationId, agentResponse != null ? agentResponse.getIterations() : 0);
 
             String answer = agentResponse != null ? agentResponse.getAnswer() : null;
             if (answer == null || answer.isBlank()) {
@@ -141,7 +141,7 @@ public class ChatServiceImpl implements ChatService {
             }
 
             return Message.builder()
-                    .notebookId(notebookId)
+                    .conversationId(conversationId)
                     .role("ai")
                     .content(answer)
                     .citations(List.of()) // Agent mode trả về raw text, không có structured citations
@@ -154,13 +154,13 @@ public class ChatServiceImpl implements ChatService {
 
         } catch (Exception e) {
             log.error("AI Server unavailable (agent mode), returning fallback: {}", e.getMessage());
-            return buildFallbackMessage(notebookId, content);
+            return buildFallbackMessage(conversationId, content);
         }
     }
 
-    private Message buildFallbackMessage(String notebookId, String content) {
+    private Message buildFallbackMessage(String conversationId, String content) {
         return Message.builder()
-                .notebookId(notebookId)
+                .conversationId(conversationId)
                 .role("ai")
                 .content("⚠️ Hệ thống AI tạm thời không khả dụng. Vui lòng thử lại sau.\n\n"
                         + "Câu hỏi của bạn: \"" + content + "\"")

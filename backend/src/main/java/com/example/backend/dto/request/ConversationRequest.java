@@ -4,10 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class NotebookRequest {
+public class ConversationRequest {
     @NotBlank(message = "Title is required")
     private String title;
-    
-    private String emoji;
-    private String color;
+
 }
