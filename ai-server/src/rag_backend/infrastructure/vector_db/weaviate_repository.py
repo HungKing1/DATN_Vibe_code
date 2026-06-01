@@ -285,6 +285,7 @@ class WeaviateRepository(VectorRepository):
         query_vector: list[float],
         top_k: int = 10,
         so_ky_hieu: str | None = None,
+        ten_day_du: str | None = None,
         alpha: float = 0.5,
     ) -> list[RetrievalResult]:
         """Hybrid search (BM25 + vector) on LegalChunk collection."""
@@ -295,8 +296,12 @@ class WeaviateRepository(VectorRepository):
             chunk_col = client.collections.get("LegalChunk")
 
             filters = None
-            if so_ky_hieu:
+            if so_ky_hieu and ten_day_du:
+                filters = Filter.by_property("so_ky_hieu").equal(so_ky_hieu) & Filter.by_property("ten_day_du").like(f"*{ten_day_du}*")
+            elif so_ky_hieu:
                 filters = Filter.by_property("so_ky_hieu").equal(so_ky_hieu)
+            elif ten_day_du:
+                filters = Filter.by_property("ten_day_du").like(f"*{ten_day_du}*")
 
             response = chunk_col.query.hybrid(
                 query=query,

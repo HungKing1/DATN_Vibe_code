@@ -8,6 +8,8 @@ from __future__ import annotations
 import logging
 import re
 
+from rag_backend.application.utils.chunk_utils import expand_split_chunks_async
+
 from rag_backend.domain.interfaces.context_builder import ContextBuilder
 from rag_backend.domain.interfaces.embedding_provider import EmbeddingProvider
 from rag_backend.domain.interfaces.query_rewriter import QueryRewriter
@@ -42,38 +44,7 @@ class QueryService:
         match = re.search(r"\b\d+/\d+/[A-Z0-9]+\b", text)
         return match.group(0) if match else None
 
-    async def _expand_split_chunks(
-        self,
-        results: list[RetrievalResult],
-        so_ky_hieu: str | None,
-    ) -> list[RetrievalResult]:
-        """Fetch all parts of a split article if we retrieve a chunk with is_split=True."""
-        expanded = []
-        seen_articles = set()
 
-        for r in results:
-            is_split = r.metadata.get("is_split")
-            # If so_ky_hieu isn't passed, try to get it from the chunk metadata
-            chunk_so_ky_hieu = so_ky_hieu or r.metadata.get("so_ky_hieu")
-            
-            if is_split and chunk_so_ky_hieu:
-                art_ids = r.metadata.get("article_mongo_ids", [])
-                if art_ids and art_ids[0] not in seen_articles:
-                    seen_articles.add(art_ids[0])
-                    all_parts = await self._vector_repo.get_chunks_by_article_id(
-                        mongo_article_id=art_ids[0], so_ky_hieu=chunk_so_ky_hieu
-                    )
-                    all_parts.sort(key=lambda x: x.metadata.get("split_part", 1))
-                    if all_parts:
-                        full_content = "\n".join(p.content for p in all_parts)
-                        # Replace content with full merged content
-                        expanded.append(r.model_copy(update={"content": full_content}))
-            else:
-                # Deduplicate merged articles if they appear multiple times just in case,
-                # but standard chunks we just append.
-                expanded.append(r)
-
-        return expanded
 
     async def process_query(
         self,
@@ -118,7 +89,7 @@ class QueryService:
         logger.info("Retrieved %d results from LegalChunk", len(retrieval_results))
 
         # 5. Expand split chunks
-        expanded_results = await self._expand_split_chunks(retrieval_results, so_ky_hieu)
+        expanded_results = await expand_split_chunks_async(retrieval_results, self._vector_repo, so_ky_hieu)
         logger.info("After expanding split chunks, we have %d results", len(expanded_results))
 
         # 6. Re-ranking

@@ -87,6 +87,8 @@ ai-server/
     │   │   └── __init__.py
     │   ├── prompt/
     │   │   └── prompt_manager.py # PromptManager — registry tập trung TẤT CẢ prompts
+    │   ├── utils/
+    │   │   └── chunk_utils.py        # Các hàm tiện ích dùng chung (e.g. expand_split_chunks)
     │   └── services/
     │       ├── ingestion_service.py  # IngestionService — orchestrate MongoDB→Weaviate pipeline
     │       ├── query_service.py      # QueryService — extract so_ky_hieu, retrieve, rerank
@@ -196,14 +198,6 @@ vector[384]                 — embedding của embedding_text (prefix + content
 
 > **Quan trọng:** Không còn collection `Law` hay `LawChunk` nữa. `so_ky_hieu` là key định danh chính thay vì `law_uuid`.
 
-> **Trước khi dùng schema mới:** Phải drop collections cũ nếu còn tồn tại:
-> ```python
-> client.collections.delete("Law")
-> client.collections.delete("LawChunk")
-> ```
-
----
-
 ## 6. Ingestion Pipeline (MongoDB → Weaviate)
 
 ```
@@ -302,7 +296,7 @@ MasterLawyerAgent (Node)
     │
     ▼ (Send API - Parallel Execution)
 ParalegalAgent(s) (Node)
-    │   ├── Gọi `search_law_database()` (Hybrid Search: BM25 + Vector trên LegalChunk)
+    │   ├── Gọi `search_law_database()` (Tìm Weaviate → Expand Chunks → Rerank)
     │   ├── Gọi `think_tool()` tự đánh giá kết quả
     │   └── Trích xuất *NGUYÊN VĂN* điều luật đẩy vào State
     │
@@ -498,4 +492,4 @@ LANGCHAIN_PROJECT=rag_backend_dev
 
 ---
 
-*Cập nhật lần cuối: 2026-05-30. Tối ưu thuật toán Chunking (Balanced Partitioning & LCP Merge) và đồng bộ embedding text schema.*
+*Cập nhật lần cuối: 2026-06-01. Tích hợp Reranker và Expand Split Chunks vào Paralegal Agent, sử dụng `law_name` (chứa `ten_day_du`) thay cho `so_ky_hieu` để tăng cường độ chính xác khi query LangGraph.*

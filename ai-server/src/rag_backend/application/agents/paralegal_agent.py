@@ -18,11 +18,12 @@ class ParalegalAgentFactory:
         vector_repository,
         embedding_provider,
         prompt_manager,
+        reranker,
     ):
         self._llm = llm_provider.get_underlying_model()
         self._prompt_manager = prompt_manager
         self._tools = [
-            create_search_law_database_tool(vector_repository, embedding_provider),
+            create_search_law_database_tool(vector_repository, embedding_provider, reranker),
             think_tool,
         ]
 
@@ -34,8 +35,8 @@ class ParalegalAgentFactory:
         agent = create_react_agent(self._llm, self._tools, prompt=system_prompt)
         
         task_msg = f"Task Description: {input_data['task_description']}\n"
-        if input_data.get("law_uuid"):
-            task_msg += f"Law UUID filter: {input_data['law_uuid']}\n"
+        if input_data.get("law_name"):
+            task_msg += f"Law name filter: {input_data['law_name']}\n"
             
         result = await agent.ainvoke(
             {"messages": [HumanMessage(content=task_msg)]},
@@ -56,7 +57,7 @@ class ParalegalAgentFactory:
                 
         finding = ResearchFinding(
             task_description=input_data["task_description"],
-            law_uuid=input_data.get("law_uuid"),
+            law_name=input_data.get("law_name"),
             query_used=", ".join(queries_used),
             chunks=chunks_collected,
         )

@@ -201,6 +201,7 @@ class Container:
                 vector_repository=self.vector_repository(),
                 embedding_provider=self.embedding_provider(),
                 prompt_manager=self.prompt_manager(),
+                reranker=self.reranker(),
             )
             self._instances["multi_agent_service"] = MultiAgentService(
                 master_agent=master,

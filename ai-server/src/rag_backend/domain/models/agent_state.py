@@ -10,14 +10,14 @@ class ResearchFinding(TypedDict):
     """Raw research findings returned by Paralegal Agent."""
 
     task_description: str
-    law_uuid: str | None
+    law_name: str | None
     query_used: str
     chunks: list[dict]
 
 class ParalegalInput(TypedDict):
     """Input payload for Paralegal node."""
     task_description: str
-    law_uuid: str | None
+    law_name: str | None
     tool_call_id: str
 
 

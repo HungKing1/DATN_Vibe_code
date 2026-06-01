@@ -72,6 +72,7 @@ class VectorRepository(ABC):
         query_vector: list[float],
         top_k: int = 10,
         so_ky_hieu: str | None = None,
+        ten_day_du: str | None = None,
         alpha: float = 0.5,
     ) -> list[RetrievalResult]:
         """Hybrid search (BM25 + vector) on LegalChunk collection."""

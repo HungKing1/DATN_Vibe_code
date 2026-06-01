@@ -83,7 +83,7 @@ class MultiAgentService:
             if tc["name"] == "delegate_task":
                 sends.append(Send("paralegal", {
                     "task_description": tc["args"].get("description", ""),
-                    "law_uuid": tc["args"].get("law_uuid"),
+                    "law_name": tc["args"].get("law_name"),
                     "tool_call_id": tc["id"]
                 }))
             else:
