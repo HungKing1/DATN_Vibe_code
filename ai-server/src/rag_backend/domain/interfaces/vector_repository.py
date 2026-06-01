@@ -17,7 +17,8 @@ class VectorRepository(ABC):
         ...
 
     @abstractmethod
-    async def list_collections(self) -> list[str]:
+    async def check_health(self) -> bool:
+        """Check if the vector database is healthy and ready."""
         ...
 
     @abstractmethod

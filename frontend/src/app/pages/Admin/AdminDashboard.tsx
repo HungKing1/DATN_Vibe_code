@@ -11,8 +11,8 @@ import { adminApi, LawInfo } from '../../api/adminService';
 interface DashboardStats {
   totalLaws: number;
   totalChunks: number;
-  totalFiles: number;
   aiHealth: 'checking' | 'healthy' | 'unhealthy';
+  weaviateHealth: 'checking' | 'healthy' | 'unhealthy' | 'unknown';
   recentLaws: LawInfo[];
 }
 
@@ -21,8 +21,8 @@ export function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats>({
     totalLaws: 0,
     totalChunks: 0,
-    totalFiles: 0,
     aiHealth: 'checking',
+    weaviateHealth: 'checking',
     recentLaws: [],
   });
   const [loading, setLoading] = useState(true);
@@ -36,22 +36,21 @@ export function AdminDashboard() {
         const health = await adminApi.checkAiHealth();
         setStats(prev => ({
           ...prev,
-          aiHealth: health.ai_server === 'healthy' ? 'healthy' : 'unhealthy',
+          aiHealth: health.services?.ai_server === 'healthy' ? 'healthy' : 'unhealthy',
+          weaviateHealth: health.services?.weaviate === 'healthy' ? 'healthy' : (health.services?.weaviate === 'unknown' ? 'unknown' : 'unhealthy'),
         }));
       } catch {
-        setStats(prev => ({ ...prev, aiHealth: 'unhealthy' }));
+        setStats(prev => ({ ...prev, aiHealth: 'unhealthy', weaviateHealth: 'unhealthy' }));
       }
 
       // Load Laws stats from Weaviate (single source of truth)
       try {
         const laws = await adminApi.listLaws();
         const totalChunks = laws.reduce((s, l) => s + (l.chunk_count || 0), 0);
-        const totalFiles = laws.reduce((s, l) => s + (l.source_files?.length || 0), 0);
         setStats(prev => ({
           ...prev,
           totalLaws: laws.length,
           totalChunks,
-          totalFiles,
           recentLaws: laws.slice(0, 5),
         }));
       } catch {
@@ -82,7 +81,7 @@ export function AdminDashboard() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
-        className="grid grid-cols-4 gap-4"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
       >
         {/* Total Laws */}
         <div className="bg-card p-5 rounded-xl border border-border shadow-sm">
@@ -95,16 +94,7 @@ export function AdminDashboard() {
           </div>
         </div>
 
-        {/* Total Files */}
-        <div className="bg-card p-5 rounded-xl border border-border shadow-sm">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 font-medium">
-            <FileText className="w-4 h-4" />
-            File đã upload
-          </div>
-          <div className="text-3xl font-bold">
-            {loading ? <div className="w-10 h-8 bg-muted animate-pulse rounded" /> : stats.totalFiles}
-          </div>
-        </div>
+
 
         {/* Total Chunks */}
         <div className="bg-card p-5 rounded-xl border border-border shadow-sm">
@@ -144,6 +134,40 @@ export function AdminDashboard() {
             )}
           </div>
         </div>
+
+        {/* Vector DB Health */}
+        <div className="bg-card p-5 rounded-xl border border-border shadow-sm">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 font-medium">
+            <Database className="w-4 h-4" />
+            Vector DB
+          </div>
+          <div className="flex items-center gap-2">
+            {stats.weaviateHealth === 'checking' && (
+              <>
+                <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <span className="text-lg font-semibold text-muted-foreground">Đang kiểm tra...</span>
+              </>
+            )}
+            {stats.weaviateHealth === 'healthy' && (
+              <>
+                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                <span className="text-lg font-semibold text-emerald-600">Hoạt động</span>
+              </>
+            )}
+            {stats.weaviateHealth === 'unhealthy' && (
+              <>
+                <XCircle className="w-5 h-5 text-red-500" />
+                <span className="text-lg font-semibold text-red-600">Lỗi kết nối</span>
+              </>
+            )}
+            {stats.weaviateHealth === 'unknown' && (
+              <>
+                <Activity className="w-5 h-5 text-amber-500" />
+                <span className="text-lg font-semibold text-amber-600">Không rõ</span>
+              </>
+            )}
+          </div>
+        </div>
       </motion.div>
 
       {/* Quick actions */}
@@ -153,7 +177,7 @@ export function AdminDashboard() {
         transition={{ delay: 0.1 }}
       >
         <h2 className="font-semibold mb-4">Truy cập nhanh</h2>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <NavLink
             to="/admin/ingestion"
             className="bg-card p-5 rounded-xl border border-border shadow-sm hover:border-primary/40 hover:bg-accent/30 transition-colors flex items-center gap-4"
@@ -164,18 +188,6 @@ export function AdminDashboard() {
             <div>
               <p className="font-medium text-foreground">Quản lý Tài liệu</p>
               <p className="text-xs text-muted-foreground mt-0.5">Upload và quản lý văn bản pháp luật</p>
-            </div>
-          </NavLink>
-          <NavLink
-            to="/admin/collections"
-            className="bg-card p-5 rounded-xl border border-border shadow-sm hover:border-primary/40 hover:bg-accent/30 transition-colors flex items-center gap-4"
-          >
-            <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
-              <Database className="w-5 h-5 text-purple-500" />
-            </div>
-            <div>
-              <p className="font-medium text-foreground">Law Registry</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Quản lý bộ sưu tập văn bản pháp luật</p>
             </div>
           </NavLink>
         </div>
@@ -195,18 +207,17 @@ export function AdminDashboard() {
           </div>
           <div className="divide-y divide-border">
             {stats.recentLaws.map(law => (
-              <div key={law.law_uuid} className="px-5 py-3 flex items-center justify-between">
+              <div key={law.so_ky_hieu} className="px-5 py-3 flex items-center justify-between">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">
-                    {law.title || law.law_uuid}
+                    {law.ten_day_du}
                   </p>
                   <p className="text-xs font-mono text-muted-foreground truncate">
-                    {law.source_files?.join(', ') ?? 'Không có file'}
+                    {law.loai_van_ban} • {law.so_ky_hieu}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0 ml-4 text-xs text-muted-foreground">
                   <span>{law.chunk_count.toLocaleString()} chunks</span>
-                  <span>{law.source_files?.length ?? 0} files</span>
                 </div>
               </div>
             ))}

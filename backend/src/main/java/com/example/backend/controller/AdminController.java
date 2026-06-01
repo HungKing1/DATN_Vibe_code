@@ -57,15 +57,10 @@ public class AdminController {
     @PostMapping("/laws/reload")
     public ApiResponse<LawCreateResponse> reloadLaw(
             @RequestParam String soKyHieu,
-            @RequestBody Map<String, String> body
-    ) {
+            @RequestBody Map<String, String> body) {
         String tenDayDu = body.get("ten_day_du");
         log.info("Admin reloading Law so_ky_hieu={} from MongoDB: {}", soKyHieu, tenDayDu);
-        // Note: For a clean reload, we should ideally delete the old chunks first, 
-        // which can be done here or handled within the AI server logic.
-        // We will just do a delete then ingest.
-        aiServerClient.deleteLaw(soKyHieu);
-        LawCreateResponse response = aiServerClient.ingestFromMongodb(tenDayDu);
+        LawCreateResponse response = aiServerClient.reloadLaw(soKyHieu, tenDayDu);
         return ApiResponse.success(response);
     }
 
@@ -88,10 +83,7 @@ public class AdminController {
      */
     @GetMapping("/ai-health")
     public ApiResponse<Map<String, Object>> aiServerHealth() {
-        boolean healthy = aiServerClient.isHealthy();
-        return ApiResponse.success(Map.of(
-                "ai_server", healthy ? "healthy" : "unhealthy",
-                "message", healthy ? "AI Server is running" : "AI Server is not reachable"
-        ));
+        Map<String, Object> healthStatus = aiServerClient.checkHealth();
+        return ApiResponse.success(healthStatus);
     }
 }

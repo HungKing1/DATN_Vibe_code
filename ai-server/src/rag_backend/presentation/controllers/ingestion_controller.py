@@ -42,6 +42,15 @@ class IngestionController:
             error_message=result.error_message,
         )
 
+    async def reload_law(
+        self,
+        so_ky_hieu: str,
+        request: MongoIngestionRequest,
+    ) -> IngestionResultDto:
+        """Delete existing law chunks and re-ingest from MongoDB."""
+        await self._service.delete_law(so_ky_hieu)
+        return await self.ingest_law(request)
+
     async def list_laws(self) -> LawListResponse:
         """List all distinct laws from Weaviate."""
         laws = await self._service.list_laws()

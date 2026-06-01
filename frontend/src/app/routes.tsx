@@ -19,7 +19,6 @@ import { LoginPage } from './pages/Auth/LoginPage';
 import { SignupPage } from './pages/Auth/SignupPage';
 import { AdminDashboard } from './pages/Admin/AdminDashboard';
 import { IngestionPage } from './pages/Admin/IngestionPage';
-import { CollectionRegistryPage } from './pages/Admin/CollectionRegistryPage';
 
 export const router = createBrowserRouter([
   // ---------------------------------------------
@@ -48,7 +47,6 @@ export const router = createBrowserRouter([
     children: [
       { index: true, Component: AdminDashboard },
       { path: 'ingestion', Component: IngestionPage },
-      { path: 'collections', Component: CollectionRegistryPage },
     ],
   },
 

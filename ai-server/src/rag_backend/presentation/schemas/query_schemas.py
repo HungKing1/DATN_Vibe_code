@@ -19,16 +19,10 @@ class QueryRequestSchema(BaseModel):
     hybrid_alpha: float = Field(default=0.5, ge=0.0, le=1.0)
     use_reranker: bool = True
     use_query_rewrite: bool = True
-    stream: bool = False
     metadata_filters: dict = Field(default_factory=dict)
     max_context_tokens: int = 4000
 
 
-
-class ReflectionQueryRequestSchema(QueryRequestSchema):
-    """Request schema for reflection RAG queries."""
-
-    max_reflection_iterations: int = Field(default=3, ge=1, le=10)
 
 
 # ── Response Schemas ────────────────────────────────────────
@@ -55,11 +49,3 @@ class QueryResponseSchema(BaseModel):
     reranked_count: int = 0
     token_usage: dict[str, int] = Field(default_factory=dict)
     metadata: dict = Field(default_factory=dict)
-
-
-class ReflectionQueryResponseSchema(QueryResponseSchema):
-    """Response schema for reflection RAG queries."""
-
-    reflection_iterations: int = 0
-    reflection_log: list[dict] = Field(default_factory=list)
-

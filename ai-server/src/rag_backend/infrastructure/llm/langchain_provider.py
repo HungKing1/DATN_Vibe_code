@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import AsyncIterator
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -95,37 +94,6 @@ class LangChainOpenAIProvider(LLMProvider):
                 detail=str(e),
             ) from e
 
-    async def generate_stream(
-        self,
-        prompt: str,
-        system_prompt: str | None = None,
-        temperature: float | None = None,
-        max_tokens: int | None = None,
-        **kwargs,
-    ) -> AsyncIterator[str]:
-        """Stream response tokens from LangChain ChatOpenAI."""
-        try:
-            messages = []
-            if system_prompt:
-                messages.append(SystemMessage(content=system_prompt))
-            messages.append(HumanMessage(content=prompt))
-
-            llm = self._llm
-            if temperature is not None or max_tokens is not None:
-                llm = self._llm.bind(
-                    temperature=temperature or self._default_temperature,
-                    max_tokens=max_tokens or self._default_max_tokens,
-                )
-
-            async for chunk in llm.astream(messages):
-                if chunk.content:
-                    yield extract_text_from_message(chunk.content)
-
-        except Exception as e:
-            raise LLMProviderError(
-                f"LLM streaming failed: {e}",
-                detail=str(e),
-            ) from e
 
     def get_model_name(self) -> str:
         return self._model

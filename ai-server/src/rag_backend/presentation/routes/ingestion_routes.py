@@ -5,7 +5,6 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Request
 
 from rag_backend.presentation.schemas.ingestion_schemas import (
-    CollectionListResponse,
     DeleteLawResponse,
     IngestionResultDto,
     LawListResponse,
@@ -19,10 +18,6 @@ def _get_ingestion_controller(request: Request):
     """Get IngestionController from app state (injected via DI)."""
     return request.app.state.ingestion_controller
 
-
-def _get_vector_repo(request: Request):
-    """Get VectorRepository from app state (injected via DI)."""
-    return request.app.state.vector_repository
 
 
 # ──────────────────────────────────────────────────────────────
@@ -48,13 +43,12 @@ async def ingest_law(
     summary="Reload Law from MongoDB",
 )
 async def reload_law(
-    so_ky_hieu: str, # For path param, but we might just need ten_day_du for ingestion. 
-    # For now, accept a body or just re-route to ingest if needed. Let's just take a body.
+    so_ky_hieu: str,
     request: MongoIngestionRequest,
     controller=Depends(_get_ingestion_controller),
 ):
-    """Reload an existing law from MongoDB."""
-    return await controller.ingest_law(request=request)
+    """Reload an existing law from MongoDB by deleting old chunks first."""
+    return await controller.reload_law(so_ky_hieu=so_ky_hieu, request=request)
 
 
 @router.get(
@@ -82,21 +76,4 @@ async def delete_law(
     return await controller.delete_law(so_ky_hieu=so_ky_hieu)
 
 
-# ──────────────────────────────────────────────────────────────
-# Debug / Infra
-# ──────────────────────────────────────────────────────────────
 
-@router.get(
-    "/collections",
-    response_model=CollectionListResponse,
-    summary="List Weaviate collections (debug)",
-)
-async def list_collections(
-    repo=Depends(_get_vector_repo),
-):
-    """List all collections in Weaviate."""
-    collections = await repo.list_collections()
-    return CollectionListResponse(
-        collections=collections,
-        count=len(collections),
-    )

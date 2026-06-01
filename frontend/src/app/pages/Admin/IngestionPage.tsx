@@ -94,6 +94,25 @@ export function IngestionPage() {
     }
   };
 
+  const handleReload = async (law: LawInfo) => {
+    if (!window.confirm(`Bạn có chắc muốn tải lại (re-embedding) văn bản ${law.so_ky_hieu}? Dữ liệu vector cũ sẽ bị xóa.`)) return;
+    
+    setUploadError('');
+    setUploadSuccess('');
+    
+    try {
+      const result = await adminApi.reloadLaw(law.so_ky_hieu, law.ten_day_du);
+      if (result.success) {
+        setUploadSuccess(`Đã tải lại thành công: ${result.so_ky_hieu} (${result.chunks_stored} chunks)`);
+        await loadLaws();
+      } else {
+        setUploadError(result.error_message || 'Tải lại thất bại');
+      }
+    } catch (err: any) {
+      setUploadError(err?.message ?? 'Tải lại thất bại');
+    }
+  };
+
   const handleDelete = async (soKyHieu: string) => {
     if (!window.confirm(`Bạn có chắc muốn xóa văn bản ${soKyHieu}?`)) return;
     try {
@@ -300,7 +319,7 @@ export function IngestionPage() {
                 <TableHead>Tên đầy đủ</TableHead>
                 <TableHead>Loại</TableHead>
                 <TableHead>Chunks</TableHead>
-                <TableHead className="pr-5 w-16 text-right">Xóa</TableHead>
+                <TableHead className="pr-5 w-24 text-right">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -332,7 +351,20 @@ export function IngestionPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="py-3 pr-5">
-                      <div className="flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost" size="icon"
+                              className="h-8 w-8 hover:text-primary hover:bg-accent"
+                              onClick={() => handleReload(law)}
+                            >
+                              <RefreshCw className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Tải lại văn bản (Re-embed)</TooltipContent>
+                        </Tooltip>
+                        
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button

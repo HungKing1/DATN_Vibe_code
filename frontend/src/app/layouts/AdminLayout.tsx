@@ -11,7 +11,6 @@ import { useAuth } from '../context/AuthContext';
 const NAV_PRIMARY = [
   { to: '/admin',             label: 'Tổng quan',          icon: LayoutDashboard, end: true  },
   { to: '/admin/ingestion',   label: 'Quản lý Tài liệu',   icon: UploadCloud,     end: false },
-  { to: '/admin/collections', label: 'Collection Registry', icon: Database,        end: false },
 ];
 
 function NavItem({

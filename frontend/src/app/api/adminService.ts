@@ -20,8 +20,11 @@ export interface LawCreateResponse {
 }
 
 export interface AiHealthResponse {
-  ai_server: 'healthy' | 'unhealthy';
-  message: string;
+  status: string;
+  services?: {
+    ai_server?: string;
+    weaviate?: string;
+  };
 }
 
 // ─── API calls — all go through Backend Java (port 8080) ─────

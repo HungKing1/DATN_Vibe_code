@@ -2,20 +2,15 @@
 
 Endpoints:
     POST /api/v1/query/          — Standard RAG query (sync JSON response)
-    POST /api/v1/query/stream    — Standard RAG query (SSE streaming)
-    POST /api/v1/query/reflect   — Reflection RAG query (iterative self-correction)
 """
 
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import StreamingResponse
 
 from rag_backend.presentation.schemas.query_schemas import (
     QueryRequestSchema,
     QueryResponseSchema,
-    ReflectionQueryRequestSchema,
-    ReflectionQueryResponseSchema,
 )
 
 router = APIRouter(prefix="/api/v1/query", tags=["Query"])
@@ -39,44 +34,6 @@ async def query(
 
     Pipeline: query rewrite → hybrid search → rerank → context build → LLM generate.
     """
-    if body.stream:
-        return StreamingResponse(
-            controller.query_stream(body),
-            media_type="text/event-stream",
-        )
-
     return await controller.query(body)
 
-@router.post("/stream")
-async def query_stream(
-    body: QueryRequestSchema,
-    request: Request,
-    controller=Depends(_get_query_controller),
-):
-    """Execute a RAG query with Server-Sent Events (SSE) streaming response.
 
-    Tokens are returned in real-time as they are generated.
-    """
-    return StreamingResponse(
-        controller.query_stream(body),
-        media_type="text/event-stream",
-    )
-
-
-# ── Reflection RAG ──────────────────────────────────────────
-
-
-@router.post("/reflect", response_model=ReflectionQueryResponseSchema)
-async def query_with_reflection(
-    body: ReflectionQueryRequestSchema,
-    request: Request,
-    controller=Depends(_get_query_controller),
-):
-    """Execute a RAG query with iterative reflection loop.
-
-    After generating an answer, the system evaluates quality
-    (groundedness, relevance, citations) and self-corrects via
-    query rewriting, additional retrieval, or regeneration —
-    up to ``max_reflection_iterations`` times.
-    """
-    return await controller.query_reflect(body)

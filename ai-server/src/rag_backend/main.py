@@ -55,7 +55,6 @@ async def lifespan(app: FastAPI):
     app.state.ingestion_controller = container.ingestion_controller()
     app.state.query_controller = container.query_controller()
     app.state.agent_controller = container.agent_controller()
-    app.state.vector_repository = vector_repo
 
     logger.info("Application started successfully")
 

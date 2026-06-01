@@ -51,13 +51,14 @@ class WeaviateRepository(VectorRepository):
             logger.info("Connected to Weaviate at %s:%d", host, port)
         return self._client
 
-    async def list_collections(self) -> list[str]:
+    async def check_health(self) -> bool:
+        """Check if Weaviate is healthy and ready."""
         try:
             client = await self._get_client()
-            response = client.collections.list_all()
-            return list(response.keys())
+            return client.is_ready()
         except Exception as e:
-            raise VectorStoreError("Failed to list collections", detail=str(e)) from e
+            logger.error("Weaviate health check failed: %s", e)
+            return False
 
     async def collection_exists(self, collection_name: str) -> bool:
         try:

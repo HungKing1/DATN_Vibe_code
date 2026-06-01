@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import AsyncIterator
-
 from rag_backend.domain.models.query import GenerationResult
 
 
@@ -12,12 +10,11 @@ class LLMProvider(ABC):
     """Abstract base class for LLM providers.
 
     Implementations: LangChainOpenAIProvider, OllamaProvider, ClaudeProvider, etc.
-    Supports both standard and streaming generation.
+    Supports standard generation.
 
     Example — switching to Ollama:
         class OllamaProvider(LLMProvider):
             async def generate(self, prompt, **kwargs) -> GenerationResult: ...
-            async def generate_stream(self, prompt, **kwargs) -> AsyncIterator[str]: ...
     """
 
     @abstractmethod
@@ -42,21 +39,6 @@ class LLMProvider(ABC):
         """
         ...
 
-    @abstractmethod
-    async def generate_stream(
-        self,
-        prompt: str,
-        system_prompt: str | None = None,
-        temperature: float | None = None,
-        max_tokens: int | None = None,
-        **kwargs,
-    ) -> AsyncIterator[str]:
-        """Stream a response from the LLM token-by-token.
-
-        Yields:
-            String tokens as they are generated.
-        """
-        ...
 
     @abstractmethod
     def get_model_name(self) -> str:

@@ -1,14 +1,12 @@
 """RAG Pipeline — full end-to-end Retrieval-Augmented Generation.
 
-Flow (standard):      Query → QueryService → PromptManager → LLMProvider → Post-processing → RAGResponse
-Flow (with reflection): Query → [retrieve → generate → evaluate → reflect → adjust] × N → ReflectionRAGResponse
+Flow: Query → QueryService → PromptManager → LLMProvider → Post-processing → RAGResponse
 """
 
 from __future__ import annotations
 
 import logging
 import time
-from collections.abc import AsyncIterator
 
 from langsmith import traceable
 
@@ -30,11 +28,6 @@ class RAGPipeline:
     4. Prompt construction (via PromptManager)
     5. LLM generation
     6. Post-processing (citations, formatting)
-
-    Reflection loop (optional):
-    After step 6, evaluate the answer quality. If quality is below threshold,
-    use the reflection agent to decide corrective actions (rewrite query,
-    search more, regenerate, or stop). Repeat up to max_iterations.
     """
 
     def __init__(
@@ -119,44 +112,6 @@ class RAGPipeline:
         )
 
         return response
-
-    @traceable(run_type="chain", name="rag_pipeline_stream")
-    async def run_stream(
-        self,
-        query: Query,
-        use_rewrite: bool = True,
-        use_reranker: bool = True,
-        use_hybrid: bool = True,
-        max_context_tokens: int = 4000,
-    ) -> AsyncIterator[str]:
-        """Execute the RAG pipeline with streaming LLM output.
-
-        Yields:
-            String tokens as they are generated.
-        """
-        # Query pipeline (same as non-streaming)
-        processed_query, ranked_results, context = await self._query_service.process_query(
-            query=query,
-            use_rewrite=use_rewrite,
-            use_reranker=use_reranker,
-            use_hybrid=use_hybrid,
-            max_context_tokens=max_context_tokens,
-        )
-
-        # Build prompt
-        system_prompt = self._prompts.get_prompt("rag_system")
-        user_prompt = self._prompts.get_prompt(
-            "rag_user",
-            context=context,
-            query=processed_query.rewritten_text or processed_query.original_text,
-        )
-
-        # Stream LLM response
-        async for token in self._llm.generate_stream(
-            prompt=user_prompt,
-            system_prompt=system_prompt,
-        ):
-            yield token
 
 
 

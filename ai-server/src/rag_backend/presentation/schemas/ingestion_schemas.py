@@ -58,11 +58,3 @@ class DeleteLawResponse(BaseModel):
     status: str = "deleted"
 
 
-# ──────────────────────────────────────────────
-# Debug / Infra
-# ──────────────────────────────────────────────
-
-class CollectionListResponse(BaseModel):
-    """Response schema for listing Weaviate collections (debug)."""
-    collections: list[str]
-    count: int

@@ -132,6 +132,22 @@ public class AiServerClient {
         }
     }
 
+    public LawCreateResponse reloadLaw(String soKyHieu, String tenDayDu) {
+        log.info("Reloading Law from AI Server with so_ky_hieu: {} and ten_day_du: {}", soKyHieu, tenDayDu);
+        try {
+            return aiServerWebClient.post()
+                    .uri("/api/v1/ingestion/laws/" + soKyHieu + "/reload")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(Map.of("ten_day_du", tenDayDu))
+                    .retrieve()
+                    .bodyToMono(LawCreateResponse.class)
+                    .block();
+        } catch (WebClientResponseException e) {
+            log.error("AI Server error reloading Law: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw new RuntimeException("Law reload failed: " + e.getMessage(), e);
+        }
+    }
+
     public DeleteLawResponse deleteLaw(String soKyHieu) {
         log.info("Deleting Law so_ky_hieu={} from AI Server", soKyHieu);
         try {
@@ -166,18 +182,34 @@ public class AiServerClient {
         }
     }
 
-    public boolean isHealthy() {
+    public Map<String, Object> checkHealth() {
         try {
             @SuppressWarnings("unchecked")
             Map<String, Object> response = aiServerWebClient.get()
-                    .uri("/health")
+                    .uri("/health/ready")
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
-            return response != null && "healthy".equals(response.get("status"));
+            
+            if (response != null) {
+                Map<String, Object> modifiableResponse = new java.util.HashMap<>(response);
+                @SuppressWarnings("unchecked")
+                Map<String, Object> services = (Map<String, Object>) modifiableResponse.getOrDefault("services", new java.util.HashMap<String, Object>());
+                Map<String, Object> modifiableServices = new java.util.HashMap<>(services);
+                
+                // If we successfully got a response from the AI server, it means the AI server is healthy
+                modifiableServices.put("ai_server", "healthy");
+                modifiableResponse.put("services", modifiableServices);
+                
+                return modifiableResponse;
+            }
         } catch (Exception e) {
             log.warn("AI Server health check failed: {}", e.getMessage());
-            return false;
         }
+        
+        Map<String, Object> fallback = new java.util.HashMap<>();
+        fallback.put("status", "unreachable");
+        fallback.put("services", Map.of("ai_server", "unhealthy", "weaviate", "unknown"));
+        return fallback;
     }
 }

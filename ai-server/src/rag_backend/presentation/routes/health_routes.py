@@ -25,8 +25,7 @@ async def health_check():
 async def readiness_check(container: Container = Depends(get_container)):
     """Readiness check — verifies dependent services are available."""
     try: 
-        await container.vector_repository().list_collections()
-        weaviate_healthy = True
+        weaviate_healthy = await container.vector_repository().check_health()
     except Exception:
         weaviate_healthy = False
     

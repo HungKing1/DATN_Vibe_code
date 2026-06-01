@@ -72,7 +72,7 @@ ai-server/
     │   │   └── embedding.py      # Embedding value object
     │   └── interfaces/
     │       ├── embedding_provider.py   # EmbeddingProvider ABC
-    │       ├── llm_provider.py         # LLMProvider ABC (generate, generate_stream)
+    │       ├── llm_provider.py         # LLMProvider ABC (generate)
     │       ├── vector_repository.py    # VectorRepository ABC (CRUD Weaviate LegalChunk)
     │       ├── chunking_strategy.py    # ChunkingStrategy ABC (nhận articles + doc_meta)
     │       ├── reranker.py             # Reranker ABC
@@ -90,7 +90,7 @@ ai-server/
     │   └── services/
     │       ├── ingestion_service.py  # IngestionService — orchestrate MongoDB→Weaviate pipeline
     │       ├── query_service.py      # QueryService — extract so_ky_hieu, retrieve, rerank
-    │       ├── rag_pipeline.py       # RAGPipeline — full RAG (standard + stream)
+    │       ├── rag_pipeline.py       # RAGPipeline — full RAG
     │       └── multi_agent_service.py# MultiAgentService — Orchestrate LangGraph workflow
     │
     ├── infrastructure/
@@ -116,7 +116,7 @@ ai-server/
     └── presentation/
         ├── controllers/
         │   ├── ingestion_controller.py  # IngestionController (MongoDB JSON ingestion)
-        │   ├── query_controller.py      # QueryController (query, query_stream, query_reflect)
+        │   ├── query_controller.py      # QueryController (query)
         │   └── agent_controller.py      # AgentController (Multi-Agent RAG)
         ├── routes/
         │   ├── health_routes.py         # GET /health
@@ -144,15 +144,12 @@ ai-server/
 | `POST` | `/laws/{so_ky_hieu}/reload` | Re-ingest (xóa cũ + ingest lại) từ MongoDB |
 | `GET`  | `/laws` | Lấy danh sách tất cả bộ luật (distinct từ LegalChunk) |
 | `DELETE` | `/laws/{so_ky_hieu}` | Xóa toàn bộ chunks của 1 bộ luật |
-| `GET`  | `/collections` | Debug: list Weaviate collections |
 
 ### Query (`/api/v1/query`)
 
 | Method | Path | Mô tả |
 |--------|------|--------|
-| `POST` | `/` | Standard RAG query (sync JSON hoặc SSE nếu `stream=true`) |
-| `POST` | `/stream` | SSE streaming RAG query |
-| `POST` | `/reflect` | Reflection RAG — tự đánh giá và cải thiện câu trả lời |
+| `POST` | `/` | Standard RAG query (sync JSON) |
 | `POST` | `/agent` | Multi-Agent RAG — dùng LangGraph chia task cho Paralegal tìm kiếm song song |
 
 ### Health
@@ -282,13 +279,11 @@ DefaultContextBuilder.build()
 PromptManager.get_prompt("rag_system") + get_prompt("rag_user")
     │
     ▼
-LLMProvider.generate() / generate_stream()
+LLMProvider.generate()
     │
     ▼
 RAGResponse (answer + citations + metadata)
 ```
-
-**Reflection RAG** (`POST /query/reflect`): Sau khi generate, LLM tự evaluate (groundedness, relevance, citations_matched) → nếu chất lượng thấp → thực hiện corrective action (REWRITE_QUERY / SEARCH_MORE / REGENERATE / STOP) → lặp tối đa N lần.
 
 ---
 
@@ -395,7 +390,6 @@ File `di/container.py` là **Composition Root duy nhất**. Mọi object đều 
 | `rag_system` | System prompt cho RAG generation |
 | `rag_user` | User prompt với context + query |
 | `evaluation` | LLM-as-Judge đánh giá câu trả lời |
-| `reflection` | Reflection agent quyết định corrective action |
 | `rewrite_system` | LLM rewrite query cho retrieval |
 | `classify_system` | LLM classify query type |
 | `master_lawyer_system` | System prompt cho Master Lawyer Agent |
