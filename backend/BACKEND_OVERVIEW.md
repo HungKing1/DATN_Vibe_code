@@ -54,10 +54,13 @@ backend/
         │   ├── UserAuthSession.java   # user_auth_sessions (cookie session store)
         │   ├── Conversation.java          # conversations collection
         │   ├── Message.java           # messages collection
+        │   ├── LegalDocument.java     # legal_documents collection
+        │   └── LegalArticle.java      # legal_articles collection
 
         ├── repository/               # Spring Data MongoDB Repositories
         │   ├── UserRepository.java, UserAuthSessionRepository.java
-        │   └── ConversationRepository.java, MessageRepository.java
+        │   ├── ConversationRepository.java, MessageRepository.java
+        │   └── LegalDocumentRepository.java, LegalArticleRepository.java
         ├── dto/
         │   ├── request/              # LoginRequest, RegisterRequest, ChatRequest, ConversationRequest...
         │   ├── response/             # ApiResponse<T>, UserResponse, SearchResponse
@@ -115,6 +118,14 @@ GET    /api/v1/conversations/{id}/messages — Lấy lịch sử chat
 DELETE /api/v1/conversations/{id}/messages — Xóa lịch sử chat
 GET    /api/v1/conversations/{id}/suggestions — Lấy gợi ý câu hỏi
 POST   /api/v1/chat                    — Gửi tin nhắn (gọi AI Server)
+```
+
+### Legal Data & Search
+```
+GET    /api/v1/legal/documents               — Lấy danh sách văn bản pháp luật (có phân trang)
+GET    /api/v1/legal/documents/search        — Tìm kiếm văn bản pháp luật theo keyword
+GET    /api/v1/legal/documents/detail        — Xem chi tiết văn bản pháp luật và cấu trúc điều khoản
+POST   /api/v1/search                        — Tìm kiếm semantic thông qua AI Server (RAG)
 ```
 
 ### Admin (ROLE_ADMIN) — Quản lý ingestion Weaviate
@@ -270,7 +281,10 @@ java -jar target/backend-0.0.1-SNAPSHOT.jar
   - Xóa bỏ `ProgressController` và các trường theo dõi tiến độ học (`lawsLearned`, `User.Progress`) không cần thiết.
 
 ### 🔧 Đang làm / Cần kiểm tra
-- *(Cập nhật tại đây khi có)*
+- Hệ thống vẫn còn các phần code của **RAG Query Workflow** (như `RAGQueryRequest`, `SearchController`, mode `quick` trong `ChatServiceImpl`). Cần đối chiếu với kế hoạch decommissioning RAG để gỡ bỏ.
 
 ### 📌 Việc cần làm tiếp theo
-- *(Cập nhật tại đây khi có)*
+- Hoàn thiện việc **Decommissioning RAG Query Workflow**:
+  - Gỡ bỏ hoàn toàn `RAGQueryRequest`, `RAGResponse` trong `dto/ai`.
+  - Xóa bỏ `SearchController` và endpoint `/api/v1/search`.
+  - Cập nhật `ChatServiceImpl` và `AiServerClient` để xóa các method liên quan đến RAG thông thường (`query`, `queryStream`, `processQuickQuery`), để hệ thống chỉ hoạt động trên flow Multi-Agent.

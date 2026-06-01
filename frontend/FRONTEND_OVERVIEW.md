@@ -60,9 +60,6 @@ frontend/
 
 │       │   ├── SettingsPage.tsx   # Cài đặt người dùng
 │       │   ├── WorkspacePage.tsx  # Trang chính khi vào app
-│       │   ├── CommandPalette.tsx # Cmd+K palette
-│       │   ├── StudyTimer.tsx     # Bộ đếm thời gian học
-│       │   ├── VideoModal.tsx     # Modal xem video
 │       │   ├── MarkdownRenderer.tsx
 │       │   ├── RouteGuards.tsx    # ProtectedRoute + AdminRoute
 │       │   ├── ui/               # Shadcn-style base UI components
@@ -78,8 +75,7 @@ frontend/
 │       │   │   └── SignupPage.tsx
 │       │   └── Admin/
 │       │       ├── AdminDashboard.tsx
-│       │       ├── IngestionPage.tsx      # Quản lý ingest văn bản luật từ MongoDB
-│       │       └── CollectionRegistryPage.tsx
+│       │       └── IngestionPage.tsx      # Quản lý ingest văn bản luật từ MongoDB
 │       │
 │       ├── data/             # Static mock data / seed data
 │       └── mocks/            # Mock backend
@@ -106,7 +102,6 @@ frontend/
 | `/settings` | `SettingsPage` | `ProtectedRoute` |
 | `/admin` | `AdminDashboard` | `AdminRoute` (role = `ROLE_ADMIN`) |
 | `/admin/ingestion` | `IngestionPage` | `AdminRoute` |
-| `/admin/collections` | `CollectionRegistryPage` | `AdminRoute` |
 
 ---
 
@@ -195,9 +190,9 @@ adminApi.checkAiHealth()                     // GET /admin/ai-health
 ```typescript
 // Entities cốt lõi của dự án
 Citation
-Message  // { id, role: 'user'|'ai', content, citations?, confidence?, suggestedQuestions?, isStreaming? }
-Conversation // { id, title, emoji, color, messageCount, createdAt }
-Note, UserProgress, AppSettings
+Message  // { id, role: 'user'|'ai', content, citations?, confidence?, suggestedQuestions?, timestamp, isStreaming? }
+Conversation // { id, title, createdAt, messageCount }
+Note, AppSettings
 UserResponse // { id, email, role }  — từ auth.api.ts
 ```
 
@@ -244,7 +239,7 @@ npm run build
 - AppContext: quản lý Conversations, Chat, streaming effect
 - UI chính: Layout, LeftSidebar, ChatPanel, SourcePanel
 - Chức năng Note, Conversations
-- Admin pages: AdminDashboard, IngestionPage, CollectionRegistryPage
+- Admin pages: AdminDashboard, IngestionPage
 - Mock system (MOCK_MODE) để dev offline
 - **Chat mode selector**: 2 nút "Nhanh" (⚡) và "Tư duy" (🧠) trong ChatPanel
   - `QueryMode` type trong `types.ts`
@@ -270,6 +265,12 @@ npm run build
   - Gỡ bỏ hoàn toàn các thanh tìm kiếm (command palette triggers) bị dư thừa ở `WorkspacePage`, `Layout`, và `LeftSidebar`.
   - Xóa các model dữ liệu cũ không còn dùng (`Law`, `Clause`, `LegalTopic`, `UserProgress`) trong thư mục `types.ts`.
   - Làm sạch mock data (`mockDb.ts`, `mockData.ts`) tương ứng để tránh rác source code.
+- **Cập nhật hệ thống (2026-06-01):**
+  - Đã xóa các file components không dùng: `CommandPalette.tsx`, `StudyTimer.tsx`, `VideoModal.tsx`.
+  - Gỡ bỏ hoàn toàn `CollectionRegistryPage` và các routes liên quan ở nhánh Admin.
+  - Cập nhật data model `Conversation`: loại bỏ `emoji` và `color`.
+  - Tích hợp `reloadLaw` API vào `adminService.ts` cho chức năng đồng bộ tài liệu từ MongoDB.
+  - *Lưu ý:* Backend đã gỡ bỏ hoàn toàn RAG Query Workflow (Quick Mode) và chuyển sang Multi-Agent Flow. Giao diện ChatPanel hiện vẫn còn UI Mode Selector (⚡/🧠) nhưng sẽ cần dọn dẹp ở phase sau.
 
 ### 🔧 Đang làm / Cần kiểm tra
 - *(Cập nhật tại đây khi có)*
