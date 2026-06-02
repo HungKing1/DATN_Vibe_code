@@ -6,6 +6,12 @@ import { chatService } from '../api/chatService';
 import { settingsService } from '../api/settingsService';
 import { useAuth } from './AuthContext';
 
+interface ReferencePanelState {
+  isOpen: boolean;
+  soKyHieu: string;
+  targetId: string;
+}
+
 interface AppContextValue {
 
 
@@ -13,7 +19,7 @@ interface AppContextValue {
   conversations: Conversation[];
   activeConversationId: string;
   setActiveConversationId: (id: string) => void;
-  createConversation: (title: string) => Promise<void>;
+  createConversation: (title: string) => Promise<string | null>;
   renameConversation: (id: string, title: string) => Promise<void>;
   deleteConversation: (id: string) => Promise<void>;
   conversationMessages: Record<string, Message[]>;
@@ -40,6 +46,11 @@ interface AppContextValue {
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
   toggleSidebar: () => void;
+
+  // Reference Panel
+  referencePanel: ReferencePanelState;
+  openReference: (soKyHieu: string, targetId: string) => void;
+  closeReference: () => void;
 
 }
 
@@ -71,6 +82,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  const [referencePanel, setReferencePanel] = useState<ReferencePanelState>({ isOpen: false, soKyHieu: '', targetId: '' });
+
+  const openReference = useCallback((soKyHieu: string, targetId: string) => {
+    setReferencePanel({ isOpen: true, soKyHieu, targetId });
+  }, []);
+
+  const closeReference = useCallback(() => {
+    setReferencePanel(prev => ({ ...prev, isOpen: false }));
+  }, []);
 
   const messageIdCounter = useRef(100);
 
@@ -96,7 +116,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (conversationsData.length > 0) {
           setConversations(conversationsData);
           // Do not auto-select the first conversation so user sees the general "New Chat" page
-          setActiveConversationId('');
+          // Unless it was already set by URL params
+          setActiveConversationId(prev => prev ? prev : '');
         }
 
         if (settingsData) {
@@ -119,6 +140,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [activeConversationId, conversationMessages]);
 
+  // Close Reference Panel when switching to a different conversation
+  useEffect(() => {
+    closeReference();
+  }, [activeConversationId, closeReference]);
+
   // ======================
   // ACTIONS
   // ======================
@@ -129,9 +155,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setConversations(prev => [...prev, newNb]);
       setConversationMessages(prev => ({ ...prev, [newNb.id]: [] }));
       setActiveConversationId(newNb.id);
+      return newNb.id;
     } catch (e) {
       console.error(e);
-      // Fallback cho UI nếu chưa có backend thì dùng logic local
+      return null;
     }
   }, []);
 
@@ -173,7 +200,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // Auto-create a new conversation if there is no active one
       if (!targetNbId) {
         try {
-          const newNb = await chatService.createConversation('New Conversation');
+          const words = content.trim().split(/\s+/);
+          const shortTitle = words.slice(0, 6).join(' ') + (words.length > 6 ? '...' : '');
+          const newNb = await chatService.createConversation(shortTitle);
           setConversations(prev => [...prev, newNb]);
           setConversationMessages(prev => ({ ...prev, [newNb.id]: [] }));
           setActiveConversationId(newNb.id);
@@ -181,6 +210,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         } catch (e) {
           console.error("Failed to auto-create conversation", e);
           return;
+        }
+      } else {
+        // Nếu chat đã được tạo trước (ví dụ: bấm nút "Mới") thì tự đổi tên khi gửi tin nhắn đầu tiên
+        const existingMessages = conversationMessages[targetNbId] || [];
+        if (existingMessages.length === 0) {
+          const words = content.trim().split(/\s+/);
+          const shortTitle = words.slice(0, 6).join(' ') + (words.length > 6 ? '...' : '');
+          
+          // Gọi trực tiếp API backend để cập nhật tên trên database
+          chatService.updateConversation(targetNbId, shortTitle).then(updated => {
+             // Cập nhật lại UI sau khi backend xác nhận thành công
+             setConversations(prev => prev.map(nb => nb.id === targetNbId ? updated : nb));
+          }).catch(err => console.error("Lỗi khi update tên trên backend:", err));
         }
       }
 
@@ -233,7 +275,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             setStreamingContent('');
             setConversationMessages(prev => ({
               ...prev,
-              [activeConversationId]: (prev[activeConversationId] ?? []).map(m =>
+              [targetNbId]: (prev[targetNbId] ?? []).map(m =>
                 m.id === responseMsg.id ? { ...m, isStreaming: false } : m
               ),
             }));
@@ -305,6 +347,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         sidebarCollapsed,
         setSidebarCollapsed,
         toggleSidebar,
+
+        referencePanel,
+        openReference,
+        closeReference,
 
       }}
     >

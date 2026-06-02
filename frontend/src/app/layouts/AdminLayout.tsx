@@ -74,7 +74,7 @@ export function AdminLayout() {
                 </div>
                 <div className="overflow-hidden">
                   <p className="text-sm font-semibold text-foreground leading-none truncate">RAG Admin</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 truncate">Legal AI System</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 truncate">Hệ thống AI Pháp luật</p>
                 </div>
               </motion.div>
             )}
@@ -93,7 +93,7 @@ export function AdminLayout() {
         <nav className="flex-1 p-2 flex flex-col gap-1 overflow-y-auto overflow-x-hidden">
           {!collapsed && (
             <p className="text-xs font-medium text-muted-foreground px-3 mb-1 mt-1 uppercase tracking-wider">
-              Knowledge Base
+              Cơ sở tri thức
             </p>
           )}
           {collapsed && <div className="h-4" />}
@@ -121,7 +121,7 @@ export function AdminLayout() {
                 className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-accent-foreground hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <ArrowLeft className="w-4 h-4 flex-shrink-0" />
-                <span>Quay lại App</span>
+                <span>Quay lại Ứng dụng</span>
               </NavLink>
 
               {/* Logout */}
@@ -140,7 +140,7 @@ export function AdminLayout() {
               <NavLink
                 to="/"
                 className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                title="Quay lại App"
+                title="Quay lại Ứng dụng"
               >
                 <ArrowLeft className="w-4 h-4" />
               </NavLink>

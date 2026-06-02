@@ -1,6 +1,7 @@
 import React from 'react';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useApp } from '../context/AppContext';
 
 interface MarkdownRendererProps {
   content: string;
@@ -13,7 +14,12 @@ interface MarkdownRendererProps {
  * Nếu content từ DB chỉ có 1 newline, bảng sẽ bị bỏ qua → render thành text.
  */
 function preprocessMarkdown(content: string): string {
-  const lines = content.split('\n');
+  // Sửa lỗi LLM trả về bullet '•' thay vì '-' và escape list '1\.'
+  let processedContent = content
+    .replace(/^(\s*)•\s/gm, '$1- ')
+    .replace(/^(\s*\d+)\\\.\s/gm, '$1. ');
+
+  const lines = processedContent.split('\n');
   const result: string[] = [];
 
   // Nhận diện dòng bắt đầu bằng list marker (vd: "1.", "a)", "a1)", "-", "+", "*", "“1.")
@@ -66,11 +72,17 @@ function preprocessMarkdown(content: string): string {
 
 export function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
   const processedContent = preprocessMarkdown(content);
+  const { openReference } = useApp();
+
 
   return (
     <div className={`markdown-body ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
+        urlTransform={(value: string) => {
+          if (value.startsWith('legal://')) return value;
+          return defaultUrlTransform(value);
+        }}
         components={{
           h2: ({ node, ...props }) => <h2 className="md-h2" {...props} />,
           h3: ({ node, ...props }) => <h3 className="md-h3" {...props} />,
@@ -81,17 +93,39 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
               const text = firstChild.trim();
               if (/^["“']?[a-zđA-ZĐ]\d+\)/.test(text)) {
                 pClassName += " pl-8"; // Tiết: a1), b2) -> thụt vào mức 2
-              } else if (/^["“']?[a-zđA-ZĐ]\)/.test(text) || /^["“']?[-–+*]/.test(text)) {
-                pClassName += " pl-4"; // Điểm hoặc gạch đầu dòng: a), b), - -> thụt vào mức 1
+              } else if (/^["“']?[a-zđA-ZĐ]\)/.test(text) || /^["“']?[-–+*•]/.test(text) || /^["“']?\d+\./.test(text)) {
+                pClassName += " pl-4"; // Điểm hoặc gạch đầu dòng: a), b), -, 1. -> thụt vào mức 1
               }
             }
             return <p className={pClassName} {...props}>{children}</p>;
           },
           ul: ({ node, ...props }) => <ul className="md-ul" {...props} />,
           ol: ({ node, ...props }) => <ol className="md-ol" {...props} />,
-          a: ({ node, href, children, ...props }) => (
-            <a href={href} className="text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer" {...props}>{children}</a>
-          ),
+          a: ({ node, href, children, ...props }) => {
+            if (href?.startsWith('legal://')) {
+              return (
+                <a
+                  href={href}
+                  className="text-blue-600 hover:text-blue-800 font-medium hover:underline cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const match = href.match(/^legal:\/\/([^#]+)(?:#(.*))?$/);
+                    if (match) {
+                      const soKyHieu = match[1];
+                      const targetId = match[2] || '';
+                      openReference(soKyHieu, targetId);
+                    }
+                  }}
+                  {...props}
+                >
+                  {children}
+                </a>
+              );
+            }
+            return (
+              <a href={href} className="text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer" {...props}>{children}</a>
+            );
+          },
           code: ({ node, className, children, ...props }: any) => {
             // Check if it's inline or a block
             // ReactMarkdown passes inline as a boolean or we can infer it

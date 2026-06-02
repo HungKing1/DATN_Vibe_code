@@ -262,6 +262,13 @@ npm run build
   - Cập nhật data model `Conversation`: loại bỏ `emoji` và `color`.
   - Tích hợp `reloadLaw` API vào `adminService.ts` cho chức năng đồng bộ tài liệu từ MongoDB.
   - *Lưu ý:* Backend đã gỡ bỏ hoàn toàn RAG Query Workflow. Giao diện ChatPanel đã xóa Mode Selector. Hỗ trợ query 100% qua LangGraph Agent.
+- **Tinh chỉnh UX/UI Chat & Sidebar (2026-06-02):**
+  - **Sửa lỗi Markdown Tiếng Việt:** Cập nhật `MarkdownRenderer.tsx` xử lý triệt để lỗi bullet bị biến thành văn bản liền mạch (parse ký tự `•` và chuỗi `1\.` từ LLM) và bổ sung khoảng cách list item phù hợp.
+  - **Tự động đặt tên:** Tự động gọi API `PUT` đổi tên `Conversation` dựa trên nội dung câu hỏi đầu tiên của người dùng (giới hạn 6 từ), thay vì luôn hiển thị "Cuộc trò chuyện mới".
+  - **Gợi ý pháp luật:** Cập nhật các câu lệnh Quick Prompts phù hợp chuyên ngành luật (VD: "Hệ thống hiện có những luật nào?") và mở rộng vùng chứa để hiển thị chuẩn tiếng Việt.
+  - **Tìm kiếm cuộc trò chuyện:** Thêm nút Tìm kiếm trong `LeftSidebar.tsx` và xây dựng `SearchConversationModal.tsx` để lọc lịch sử chat ngay lập tức, mặc định hiển thị 5 chat gần nhất của hôm nay.
+  - **Đối chiếu luật tự động (Reference Panel):** Tạo `ReferencePanel.tsx` hiển thị chi tiết văn bản luật ở cạnh phải. Tích hợp `AppContext` để tự động cuộn (scroll) và highlight khi click vào các trích dẫn `legal://` từ AI, đồng thời tự động đóng panel khi đổi sang chat khác.
+  - **Gỡ bỏ tính năng cũ:** Xóa hoàn toàn các logic và trường dữ liệu liên quan đến `confidence` và `suggestedQuestions` khỏi giao diện chat.
 
 ### 🔧 Đang làm / Cần kiểm tra
 - *(Cập nhật tại đây khi có)*

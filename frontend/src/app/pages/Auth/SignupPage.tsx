@@ -14,7 +14,7 @@ export function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     if (password !== confirmPassword) {
       setError('Mật khẩu xác nhận không khớp!');
       return;
@@ -41,9 +41,8 @@ export function SignupPage() {
           <span className="text-2xl">⚖️</span>
         </div>
         <h1 className="text-2xl font-bold">Tạo tài khoản</h1>
-        <p className="text-sm text-muted-foreground mt-2">Bắt đầu học và tra cứu luật ngay hôm nay</p>
       </div>
-      
+
       {error && (
         <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-500 rounded-lg text-sm">
           {error}
@@ -53,47 +52,47 @@ export function SignupPage() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
           <label className="text-sm font-medium mb-1 block text-left">Email</label>
-          <input 
-            type="email" 
+          <input
+            type="email"
             placeholder="user@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" 
+            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
           />
         </div>
         <div>
           <label className="text-sm font-medium mb-1 block text-left">Mật khẩu</label>
-          <input 
-            type="password" 
-            placeholder="Tạo mật khẩu" 
+          <input
+            type="password"
+            placeholder="Tạo mật khẩu"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" 
+            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
           />
         </div>
         <div>
           <label className="text-sm font-medium mb-1 block text-left">Xác nhận mật khẩu</label>
-          <input 
-            type="password" 
-            placeholder="Nhập lại mật khẩu" 
+          <input
+            type="password"
+            placeholder="Nhập lại mật khẩu"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
-            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" 
+            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
           />
         </div>
-        
-        <button 
-          type="submit" 
+
+        <button
+          type="submit"
           disabled={loading}
           className="w-full mt-2 py-2.5 bg-gradient-to-br from-blue-500 to-violet-600 hover:opacity-90 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {loading ? 'Đang xử lý...' : 'Đăng ký tài khoản'}
         </button>
       </form>
-      
+
       <div className="mt-6 text-center text-sm text-muted-foreground">
         Đã có tài khoản?{' '}
         <Link to="/auth/login" className="text-blue-500 hover:underline font-medium">

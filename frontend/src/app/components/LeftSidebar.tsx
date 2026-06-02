@@ -9,6 +9,7 @@ import { useNavigate, useLocation } from 'react-router';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { Conversation } from '../types';
+import { SearchConversationModal } from './SearchConversationModal';
 
 function ConversationItem({
   conversation,
@@ -39,11 +40,10 @@ function ConversationItem({
 
   return (
     <div
-      className={`group relative flex items-center gap-2.5 px-2 py-1.5 rounded-lg cursor-pointer transition-colors ${
-        isActive
-          ? 'bg-blue-50 text-blue-700'
-          : 'hover:bg-accent text-foreground'
-      }`}
+      className={`group relative flex items-center gap-2.5 px-2 py-1.5 rounded-lg cursor-pointer transition-colors ${isActive
+        ? 'bg-blue-50 text-blue-700'
+        : 'hover:bg-accent text-foreground'
+        }`}
       onClick={() => {
         if (!isEditing) onClick();
       }}
@@ -116,10 +116,11 @@ export function LeftSidebar() {
   } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
 
   const navItems = [
-    { path: '/', icon: <MessageSquare className="w-4 h-4" />, label: 'Chat' },
+    { path: '/', icon: <MessageSquare className="w-4 h-4" />, label: 'Trò chuyện' },
     { path: '/legal', icon: <BookOpen className="w-4 h-4" />, label: 'Văn bản Pháp luật' },
   ];
 
@@ -143,7 +144,7 @@ export function LeftSidebar() {
               <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center flex-shrink-0">
                 <Brain className="w-4 h-4 text-white" />
               </div>
-              <span className="text-sm text-foreground" style={{ fontWeight: 600 }}>LearnAI</span>
+              <span className="text-sm text-foreground" style={{ fontWeight: 600 }}>Hệ thống AI pháp luật</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -174,13 +175,11 @@ export function LeftSidebar() {
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
-              className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg transition-all w-full ${
-                sidebarCollapsed ? 'justify-center' : ''
-              } ${
-                active
+              className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg transition-all w-full ${sidebarCollapsed ? 'justify-center' : ''
+                } ${active
                   ? 'bg-blue-50 text-blue-600'
                   : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-              }`}
+                }`}
               title={sidebarCollapsed ? item.label : undefined}
             >
               {item.icon}
@@ -188,22 +187,34 @@ export function LeftSidebar() {
             </button>
           );
         })}
+        {/* Nút Tìm kiếm */}
+        <button
+          onClick={() => setIsSearchOpen(true)}
+          className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg transition-all w-full ${sidebarCollapsed ? 'justify-center' : ''} text-muted-foreground hover:bg-accent hover:text-foreground mt-1`}
+          title={sidebarCollapsed ? 'Tìm kiếm' : undefined}
+        >
+          <Search className="w-4 h-4 flex-shrink-0" />
+          {!sidebarCollapsed && <span className="text-sm">Tìm kiếm</span>}
+        </button>
       </div>
 
       <div className="flex-1 min-h-0 flex flex-col pt-2">
         {!sidebarCollapsed && (
           <div className="flex items-center justify-between px-3 pb-1 flex-shrink-0">
-            <span className="text-xs text-muted-foreground uppercase tracking-wider">Chat History</span>
+            <span className="text-xs text-muted-foreground uppercase tracking-wider">Lịch sử trò chuyện</span>
             <button
-              onClick={() => createConversation('New Conversation')}
+              onClick={async () => {
+                const newId = await createConversation('Cuộc trò chuyện mới');
+                if (newId) navigate(`/?c=${newId}`);
+              }}
               className="text-xs flex items-center gap-1 text-blue-500 hover:text-blue-600 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
-              New
+              Mới
             </button>
           </div>
         )}
-        
+
         <div className="flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin flex flex-col gap-0.5">
           {conversations.map(nb => (
             <ConversationItem
@@ -212,21 +223,30 @@ export function LeftSidebar() {
               isActive={nb.id === activeConversationId}
               onClick={() => {
                 setActiveConversationId(nb.id);
-                navigate('/');
+                navigate(`/?c=${nb.id}`);
               }}
               onRename={(newTitle) => renameConversation(nb.id, newTitle)}
-              onDelete={() => deleteConversation(nb.id)}
+              onDelete={async () => {
+                const wasActive = nb.id === activeConversationId;
+                await deleteConversation(nb.id);
+                if (wasActive) {
+                  navigate('/');
+                }
+              }}
               collapsed={sidebarCollapsed}
             />
           ))}
           {sidebarCollapsed && (
-             <button
-             onClick={() => createConversation('New Chat')}
-             className="w-8 h-8 mx-auto mt-2 rounded-lg flex items-center justify-center hover:bg-accent text-muted-foreground transition-colors border border-dashed border-border"
-             title="New Chat"
-           >
-             <Plus className="w-4 h-4" />
-           </button>
+            <button
+              onClick={async () => {
+                const newId = await createConversation('Cuộc trò chuyện mới');
+                if (newId) navigate(`/?c=${newId}`);
+              }}
+              className="w-8 h-8 mx-auto mt-2 rounded-lg flex items-center justify-center hover:bg-accent text-muted-foreground transition-colors border border-dashed border-border"
+              title="Cuộc trò chuyện mới"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
           )}
         </div>
       </div>
@@ -238,14 +258,13 @@ export function LeftSidebar() {
           <>
             <button
               onClick={() => navigate('/settings')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors text-sm w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                location.pathname === '/settings' 
-                  ? 'bg-blue-50 text-blue-600' 
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-              }`}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors text-sm w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${location.pathname === '/settings'
+                ? 'bg-blue-50 text-blue-600'
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                }`}
             >
               <Settings className="w-4 h-4 flex-shrink-0" />
-              <span>Settings</span>
+              <span>Cài đặt</span>
             </button>
             <button
               onClick={logout}
@@ -262,7 +281,7 @@ export function LeftSidebar() {
             <button
               onClick={() => navigate('/settings')}
               className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              title="Settings"
+              title="Cài đặt"
             >
               <Settings className="w-4 h-4" />
             </button>
@@ -283,6 +302,12 @@ export function LeftSidebar() {
           </>
         )}
       </div>
+
+      {/* Search Modal */}
+      <SearchConversationModal 
+        isOpen={isSearchOpen} 
+        onClose={() => setIsSearchOpen(false)} 
+      />
     </motion.aside>
   );
 }

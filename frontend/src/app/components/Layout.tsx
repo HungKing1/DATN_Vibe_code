@@ -1,5 +1,6 @@
 import { Outlet, useLocation, Navigate } from 'react-router';
 import { LeftSidebar } from './LeftSidebar';
+import { ReferencePanel } from './ReferencePanel';
 import { useAuth } from '../context/AuthContext';
 
 export function Layout() {
@@ -8,7 +9,7 @@ export function Layout() {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return <div className="h-screen flex items-center justify-center">Loading...</div>;
+    return <div className="h-screen flex items-center justify-center">Đang tải...</div>;
   }
 
   if (!isAuthenticated) {
@@ -25,9 +26,12 @@ export function Layout() {
 
         {/* Content area */}
         <div className="flex flex-1 min-h-0 overflow-hidden">
-          <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="flex-1 min-w-0 overflow-hidden flex flex-col">
             <Outlet />
           </div>
+          
+          {/* Side Panel for Legal Reference */}
+          {isWorkspace && <ReferencePanel />}
         </div>
       </div>
     </div>

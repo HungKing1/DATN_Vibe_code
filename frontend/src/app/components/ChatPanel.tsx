@@ -102,7 +102,7 @@ function MessageBubble({ message, isStreaming, streamContent }: {
           <div className="flex items-center gap-1 mt-1.5 ml-1">
             <button onClick={handleCopy} className="action-btn" title="Copy">
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied && <span className="text-xs ml-1 text-emerald-600">Copied!</span>}
+              {copied && <span className="text-xs ml-1 text-emerald-600">Đã sao chép!</span>}
             </button>
             <button className="action-btn"><ThumbsUp className="w-3.5 h-3.5" /></button>
             <button className="action-btn"><ThumbsDown className="w-3.5 h-3.5" /></button>
@@ -146,10 +146,10 @@ export function ChatPanel() {
   };
 
   const quickPrompts = [
-    'Summarize all laws',
-    'What are the main topics?',
-    'Create a study plan',
-    "Explain like I'm a beginner",
+    'Hệ thống hiện có những luật nào?',
+    'Quy định về Thuế Thu nhập cá nhân',
+    'Tìm hiểu về Luật Đất đai',
+    'Giải thích thuật ngữ pháp lý',
   ];
 
   return (
@@ -162,14 +162,14 @@ export function ChatPanel() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="h-full flex flex-col items-center justify-center gap-6 text-center max-w-md mx-auto"
+              className="h-full flex flex-col items-center justify-center gap-6 text-center max-w-2xl mx-auto px-4"
             >
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
                 <Sparkles className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h2 className="text-foreground mb-1">Ask anything about the laws</h2>
-                <p className="text-sm text-muted-foreground">I'll find the answers and cite my sources</p>
+                <h2 className="text-foreground mb-1">Hỏi bất kỳ điều gì về pháp luật</h2>
+                <p className="text-sm text-muted-foreground">Tôi sẽ tìm câu trả lời và trích dẫn nguồn</p>
               </div>
               <div className="grid grid-cols-2 gap-2 w-full">
                 {quickPrompts.map((prompt, idx) => (
@@ -208,7 +208,7 @@ export function ChatPanel() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask a question about the laws..."
+            placeholder="Hỏi một câu hỏi về pháp luật..."
             rows={1}
             className="w-full bg-transparent px-4 pt-3 pb-2 text-sm text-foreground placeholder:text-muted-foreground outline-none resize-none leading-relaxed"
             style={{ minHeight: '44px', maxHeight: '128px', overflowY: 'auto' }}
@@ -221,7 +221,7 @@ export function ChatPanel() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground hidden sm:block">
-                {input.length > 0 ? `${input.length} chars` : 'Enter ↵ to send'}
+                {input.length > 0 ? `${input.length} ký tự` : 'Nhấn ↵ để gửi'}
               </span>
               <button
                 onClick={handleSend}

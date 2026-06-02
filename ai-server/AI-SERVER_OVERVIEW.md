@@ -429,4 +429,4 @@ LANGCHAIN_PROJECT=rag_backend_dev
 
 ---
 
-*Cập nhật lần cuối: 2026-06-01. Tích hợp Reranker và Expand Split Chunks vào Paralegal Agent, sử dụng `law_name` để tăng độ chính xác. Bổ sung `list_available_laws` tool cho Master Agent để nhận biết phạm vi tri thức.*
+*Cập nhật lần cuối: 2026-06-02. Tích hợp Reranker và Expand Split Chunks vào Paralegal Agent, sử dụng `law_name` để tăng độ chính xác. Bổ sung `list_available_laws` tool cho Master Agent để nhận biết phạm vi tri thức. Tinh chỉnh `MASTER_LAWYER_SYSTEM_PROMPT` ép LLM trả về các trích dẫn pháp luật theo định dạng custom protocol `[Tên điều](legal://so_ky_hieu#dieu-X)` để phục vụ Reference Panel.*

@@ -28,15 +28,13 @@ function ToggleRow({ label, description, value, onChange, icon }: ToggleRowProps
       </div>
       <button
         onClick={() => onChange(!value)}
-        className={`relative w-10 h-5.5 rounded-full transition-colors duration-200 flex-shrink-0 ${
-          value ? 'bg-blue-500' : 'bg-muted'
-        }`}
+        className={`relative w-10 h-5.5 rounded-full transition-colors duration-200 flex-shrink-0 ${value ? 'bg-blue-500' : 'bg-muted'
+          }`}
         style={{ height: '22px', width: '40px' }}
       >
         <div
-          className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform duration-200 ${
-            value ? 'translate-x-[18px]' : 'translate-x-0.5'
-          }`}
+          className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform duration-200 ${value ? 'translate-x-[18px]' : 'translate-x-0.5'
+            }`}
           style={{ height: '18px', width: '18px' }}
         />
       </button>
@@ -88,30 +86,29 @@ export function SettingsPage() {
           className="mb-6 flex items-center justify-between"
         >
           <div>
-            <h1 className="text-foreground">Settings</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Customize your LearnAI experience</p>
+            <h1 className="text-foreground">Cài đặt</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Tùy chỉnh trải nghiệm Hệ thống AI pháp luật của bạn</p>
           </div>
           <button
             onClick={handleSave}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all ${
-              saved
-                ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
-                : 'bg-gradient-to-r from-blue-500 to-violet-600 text-white hover:opacity-90'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all ${saved
+              ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+              : 'bg-gradient-to-r from-blue-500 to-violet-600 text-white hover:opacity-90'
+              }`}
           >
             {saved ? <CheckCircle2 className="w-4 h-4" /> : <Settings className="w-4 h-4" />}
-            {saved ? 'Saved!' : 'Save Changes'}
+            {saved ? 'Đã lưu!' : 'Lưu thay đổi'}
           </button>
         </motion.div>
 
         <div className="space-y-5">
 
-          {/* Appearance */}
-          <SectionCard title="Appearance" icon={<Palette className="w-4 h-4 text-amber-500" />} delay={0.1}>
+          {/* Giao diện */}
+          <SectionCard title="Giao diện" icon={<Palette className="w-4 h-4 text-amber-500" />} delay={0.1}>
             <div className="py-1">
               <ToggleRow
-                label="Compact Mode"
-                description="Reduce spacing for more content"
+                label="Chế độ thu gọn"
+                description="Giảm khoảng cách để hiển thị nhiều nội dung hơn"
                 value={settings.compactMode}
                 onChange={v => updateSettings({ compactMode: v })}
                 icon={<Database className="w-4 h-4 text-muted-foreground" />}
@@ -120,22 +117,22 @@ export function SettingsPage() {
           </SectionCard>
 
 
-          {/* Data */}
-          <SectionCard title="Data & Privacy" icon={<Database className="w-4 h-4 text-muted-foreground" />} delay={0.25}>
+          {/* Dữ liệu */}
+          <SectionCard title="Dữ liệu & Bảo mật" icon={<Database className="w-4 h-4 text-muted-foreground" />} delay={0.25}>
             <div className="py-2 space-y-2">
               <button className="w-full flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-accent transition-colors text-left">
                 <Download className="w-4 h-4 text-blue-500 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm text-foreground">Export All Data</p>
-                  <p className="text-xs text-muted-foreground">Download your documents, chats and notes as JSON</p>
+                  <p className="text-sm text-foreground">Xuất tất cả dữ liệu</p>
+                  <p className="text-xs text-muted-foreground">Tải xuống tài liệu, cuộc trò chuyện dưới dạng JSON</p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </button>
               <button className="w-full flex items-center gap-3 p-3 rounded-xl border border-red-200 hover:bg-red-50 transition-colors text-left">
                 <Trash2 className="w-4 h-4 text-red-500 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm text-red-600">Clear All Chats</p>
-                  <p className="text-xs text-muted-foreground">Permanently delete all conversation history</p>
+                  <p className="text-sm text-red-600">Xóa tất cả trò chuyện</p>
+                  <p className="text-xs text-muted-foreground">Xóa vĩnh viễn tất cả lịch sử cuộc trò chuyện</p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </button>
@@ -144,8 +141,8 @@ export function SettingsPage() {
 
           {/* App version */}
           <div className="text-center py-4">
-            <p className="text-xs text-muted-foreground">LearnAI v2.0.0 · Built with React + Tailwind CSS</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Frontend demo · No data is stored externally</p>
+            <p className="text-xs text-muted-foreground">Hệ thống AI pháp luật v2.0.0 · Built with React + Tailwind CSS</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Bản demo Frontend · Không có dữ liệu nào được lưu trữ bên ngoài</p>
           </div>
         </div>
       </div>

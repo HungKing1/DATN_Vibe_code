@@ -269,6 +269,7 @@ java -jar target/backend-0.0.1-SNAPSHOT.jar
 - **Dọn dẹp hệ thống (2026-05-30):**
   - Xóa bỏ hoàn toàn các entity dư thừa (`Law`, `Clause`, `LegalTopic`) và API liên quan (`/api/v1/laws`, `/api/v1/clauses`, `/api/v1/topics`) không còn được sử dụng ở RAG pipeline mới.
   - Xóa bỏ `ProgressController` và các trường theo dõi tiến độ học (`lawsLearned`, `User.Progress`) không cần thiết.
+- **Dọn dẹp model Message (2026-06-02):** Xóa bỏ các thuộc tính `confidence` và `suggestedQuestions` khỏi entity `Message.java` và gỡ bỏ API lấy danh sách gợi ý (`/api/v1/conversations/{id}/suggestions`).
 
 ### 🔧 Đang làm / Cần kiểm tra
 - (Không có gì đáng lưu ý)
