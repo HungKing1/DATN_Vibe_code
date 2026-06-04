@@ -52,16 +52,6 @@ class VectorRepository(ABC):
         ...
 
     @abstractmethod
-    async def search_chunks(
-        self,
-        query_vector: list[float],
-        top_k: int = 20,
-        so_ky_hieu: str | None = None,
-    ) -> list[RetrievalResult]:
-        """Vector search on LegalChunk collection."""
-        ...
-
-    @abstractmethod
     async def hybrid_search(
         self,
         query: str,
@@ -73,4 +63,9 @@ class VectorRepository(ABC):
         alpha: float = 0.5,
     ) -> list[RetrievalResult]:
         """Hybrid search (BM25 + vector) on LegalChunk collection."""
+        ...
+
+    @abstractmethod
+    async def fetch_random_chunks(self, limit: int = 50) -> list[RetrievalResult]:
+        """Fetch a sample of chunks without any search query (for dataset generation / evaluation)."""
         ...

@@ -1,3 +1,17 @@
+"""
+[LEGACY — KHÔNG CÒN HOẠT ĐỘNG]
+=================================
+File này dùng RAGPipeline cũ (`container.rag_pipeline()`) đã bị loại bỏ
+sau khi hệ thống chuyển sang kiến trúc Multi-Agent (LangGraph).
+
+Thay thế bằng: tests/evaluation/agent_evaluator.py
+  → Gọi MultiAgentService.process() thay vì RAGPipeline.run()
+  → Dùng LLM-as-a-Judge thuần túy thay vì RAGAS metrics
+
+Prompts tiếng Việt trong prompts/vietnamese_ragas.py vẫn có thể tái sử dụng
+làm tham khảo cho LLM Judge prompt.
+"""
+
 import asyncio
 import json
 import logging
@@ -77,7 +91,7 @@ async def main():
         context_precision,
         context_recall
     )
-    from tests.evaluation.prompts.vietnamese_ragas import (
+    from .prompts.vietnamese_ragas import (
         VIETNAMESE_FAITHFULNESS_PROMPT,
         VIETNAMESE_ANSWER_RELEVANCY_PROMPT,
         VIETNAMESE_CONTEXT_PRECISION_PROMPT,

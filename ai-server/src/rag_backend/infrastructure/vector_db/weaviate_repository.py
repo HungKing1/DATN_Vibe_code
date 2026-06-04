@@ -235,43 +235,6 @@ class WeaviateRepository(VectorRepository):
         except Exception as e:
             raise VectorStoreError("Failed to get chunks by article id", detail=str(e)) from e
 
-    async def search_chunks(
-        self,
-        query_vector: list[float],
-        top_k: int = 20,
-        so_ky_hieu: str | None = None,
-    ) -> list[RetrievalResult]:
-        """Vector similarity search on LegalChunk collection."""
-        try:
-            client = await self._get_client()
-            if not client.collections.exists("LegalChunk"):
-                return []
-            chunk_col = client.collections.get("LegalChunk")
-
-            filters = None
-            if so_ky_hieu:
-                filters = Filter.by_property("so_ky_hieu").equal(so_ky_hieu)
-
-            response = chunk_col.query.near_vector(
-                near_vector=query_vector,
-                limit=top_k,
-                filters=filters,
-                return_metadata=MetadataQuery(distance=True),
-            )
-
-            return [
-                RetrievalResult(
-                    chunk_id=str(obj.uuid),
-                    content=str(obj.properties.get("content", "")),
-                    score=1.0 - (obj.metadata.distance or 0.0),
-                    metadata={k: v for k, v in obj.properties.items() if k != "content"},
-                    document_id=str(obj.properties.get("mongo_doc_id", "")),
-                )
-                for obj in response.objects
-            ]
-        except Exception as e:
-            raise VectorStoreError(f"search_chunks failed (so_ky_hieu={so_ky_hieu})", detail=str(e)) from e
-
     async def hybrid_search(
         self,
         query: str,
@@ -324,3 +287,30 @@ class WeaviateRepository(VectorRepository):
             ]
         except Exception as e:
             raise VectorStoreError(f"hybrid_search failed (so_ky_hieu={so_ky_hieu})", detail=str(e)) from e
+
+    async def fetch_random_chunks(self, limit: int = 50) -> list[RetrievalResult]:
+        """Fetch a sample of chunks without any search query.
+
+        Dùng Weaviate fetch_objects (không cần vector/query) để lấy
+        các LegalChunk. Phù hợp cho việc sinh dataset đánh giá (data_generator.py).
+        """
+        try:
+            client = await self._get_client()
+            if not client.collections.exists("LegalChunk"):
+                return []
+            chunk_col = client.collections.get("LegalChunk")
+
+            response = chunk_col.query.fetch_objects(limit=limit)
+
+            return [
+                RetrievalResult(
+                    chunk_id=str(obj.uuid),
+                    content=str(obj.properties.get("content", "")),
+                    score=1.0,
+                    metadata={k: v for k, v in obj.properties.items() if k != "content"},
+                    document_id=str(obj.properties.get("mongo_doc_id", "")),
+                )
+                for obj in response.objects
+            ]
+        except Exception as e:
+            raise VectorStoreError("fetch_random_chunks failed", detail=str(e)) from e
