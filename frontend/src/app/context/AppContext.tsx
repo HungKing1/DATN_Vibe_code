@@ -27,6 +27,7 @@ interface AppContextValue {
   // Chat
   messages: Message[];
   isAIThinking: boolean;
+  thinkingConversationId: string | null;
   streamingMsgId: string | null;
   streamingContent: string;
   sendMessage: (content: string) => Promise<void>;
@@ -64,7 +65,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [activeConversationId, setActiveConversationId] = useState<string>('');
   const [conversationMessages, setConversationMessages] = useState<Record<string, Message[]>>({});
 
-  const [isAIThinking, setIsAIThinking] = useState(false);
+  const [thinkingConversationId, setThinkingConversationId] = useState<string | null>(null);
+  const isAIThinking = thinkingConversationId !== null;
   const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
   const [streamingContent, setStreamingContent] = useState('');
 
@@ -242,13 +244,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         prev.map(nb => nb.id === targetNbId ? { ...nb, messageCount: nb.messageCount + 1 } : nb)
       );
 
-      setIsAIThinking(true);
+      setThinkingConversationId(targetNbId);
 
       try {
         // Gửi qua API
         const responseMsg = await chatService.sendMessage(targetNbId, content);
 
-        setIsAIThinking(false);
+        setThinkingConversationId(null);
 
         // Khởi tạo message streaming giả để giữ UI effect
         const uiAiMsg = { ...responseMsg, isStreaming: true };
@@ -284,7 +286,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       } catch (e) {
         console.error("Lỗi khi gửi tin nhắn", e);
-        setIsAIThinking(false);
+        setThinkingConversationId(null);
       }
     },
     [activeConversationId]
@@ -334,6 +336,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         conversationMessages,
         messages,
         isAIThinking,
+        thinkingConversationId,
         streamingMsgId,
         streamingContent,
         sendMessage,

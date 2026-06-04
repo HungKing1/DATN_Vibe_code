@@ -3,8 +3,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Send, ThumbsUp, ThumbsDown, Copy, RefreshCw,
   Sparkles, BarChart2, Zap, User, Bot,
-  Check, Brain
+  Check, Brain, Mic, MicOff
 } from 'lucide-react';
+import 'regenerator-runtime/runtime';
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import { useNavigate } from 'react-router';
 import { useApp } from '../context/AppContext';
 import { MarkdownRenderer } from './MarkdownRenderer';
@@ -118,13 +120,41 @@ function MessageBubble({ message, isStreaming, streamContent }: {
 
 export function ChatPanel() {
   const {
-    messages, isAIThinking, sendMessage,
+    messages, isAIThinking, thinkingConversationId,
+    activeConversationId, sendMessage,
     streamingMsgId, streamingContent
   } = useApp();
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const navigate = useNavigate();
+
+  const {
+    transcript,
+    listening,
+    resetTranscript,
+    browserSupportsSpeechRecognition
+  } = useSpeechRecognition();
+  const previousInputRef = useRef('');
+
+  useEffect(() => {
+    if (listening) {
+      const prefix = previousInputRef.current ? previousInputRef.current + ' ' : '';
+      setInput(prefix + transcript);
+    }
+  }, [transcript, listening]);
+
+  const handleMicClick = () => {
+    if (!browserSupportsSpeechRecognition) return;
+    
+    if (listening) {
+      SpeechRecognition.stopListening();
+    } else {
+      previousInputRef.current = input;
+      resetTranscript();
+      SpeechRecognition.startListening({ continuous: true, language: 'vi-VN' });
+    }
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -133,6 +163,11 @@ export function ChatPanel() {
   const handleSend = () => {
     const trimmed = input.trim();
     if (!trimmed || isAIThinking) return;
+    
+    if (listening) {
+      SpeechRecognition.stopListening();
+    }
+    
     sendMessage(trimmed);
     setInput('');
     inputRef.current?.focus();
@@ -193,7 +228,7 @@ export function ChatPanel() {
                   streamContent={msg.id === streamingMsgId ? streamingContent : undefined}
                 />
               ))}
-              {isAIThinking && <TypingIndicator />}
+              {isAIThinking && thinkingConversationId === activeConversationId && <TypingIndicator />}
               <div ref={messagesEndRef} />
             </>
           )}
@@ -216,7 +251,18 @@ export function ChatPanel() {
           <div className="flex items-center justify-between px-3 pb-2.5">
             <div className="flex items-center gap-1">
 
-
+              {browserSupportsSpeechRecognition && (
+                <button
+                  type="button"
+                  onClick={handleMicClick}
+                  className={`p-1.5 rounded-full transition-colors flex items-center justify-center ${
+                    listening ? 'bg-red-100 text-red-500 animate-pulse' : 'text-muted-foreground hover:bg-muted'
+                  }`}
+                  title={listening ? "Đang thu âm..." : "Nhập bằng giọng nói"}
+                >
+                  {listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </button>
+              )}
 
             </div>
             <div className="flex items-center gap-2">
