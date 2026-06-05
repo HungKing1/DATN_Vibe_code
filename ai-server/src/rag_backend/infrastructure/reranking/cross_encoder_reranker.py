@@ -23,12 +23,14 @@ class CrossEncoderReranker(Reranker):
     def __init__(
         self,
         model_name: str = "cross-encoder/ms-marco-MiniLM-L-6-v2",
+        top_k: int = 5,
         device: str | None = None,
     ) -> None:
         try:
             self._model = CrossEncoder(model_name, device=device)
             self._model_name = model_name
-            logger.info("Loaded cross-encoder model: %s", model_name)
+            self._top_k = top_k
+            logger.info("Loaded cross-encoder model: %s (top_k=%d)", model_name, top_k)
         except Exception as e:
             raise RerankingError(
                 f"Failed to load reranker model: {model_name}",
@@ -39,12 +41,13 @@ class CrossEncoderReranker(Reranker):
         self,
         query: str,
         results: list[RetrievalResult],
-        top_k: int = 5,
+        top_k: int | None = None,
     ) -> list[RankedResult]:
         """Re-rank results using cross-encoder scoring."""
         if not results:
             return []
 
+        effective_top_k = top_k if top_k is not None else self._top_k
         try:
             pairs = [(query, result.content) for result in results]
             scores = self._model.predict(pairs)
@@ -64,7 +67,7 @@ class CrossEncoderReranker(Reranker):
 
             # Sort by rerank_score descending and take top_k
             ranked.sort(key=lambda r: r.rerank_score, reverse=True)
-            top_results = ranked[:top_k]
+            top_results = ranked[:effective_top_k]
 
             logger.info(
                 "Reranked %d results → top %d (model=%s)",

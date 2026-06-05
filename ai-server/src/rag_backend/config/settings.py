@@ -9,34 +9,10 @@ from enum import Enum
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
-class VectorDBProvider(str, Enum):
-    WEAVIATE = "weaviate"
-    PINECONE = "pinecone"
-    QDRANT = "qdrant"
-    MILVUS = "milvus"
-    CHROMA = "chroma"
-
-
 class LLMProviderType(str, Enum):
-    LANGCHAIN_OPENAI = "langchain_openai"
     OPENAI = "openai"
-    CLAUDE = "claude"
-    OLLAMA = "ollama"
     GOOGLE = "google"
     GROQ = "groq"
-
-
-class EmbeddingProviderType(str, Enum):
-    SENTENCE_TRANSFORMERS = "sentence_transformers"
-    OPENAI = "openai"
-    HUGGINGFACE = "huggingface"
-
-
-class IngestionStrategyType(str, Enum):
-    SEPARATE = "separate"
-    SHARED = "shared"
-
 
 class Settings(BaseSettings):
     """Application settings with environment variable loading."""
@@ -51,7 +27,6 @@ class Settings(BaseSettings):
     # --- Application ---
     app_name: str = "RAG Backend"
     app_version: str = "0.1.0"
-    debug: bool = False
     log_level: str = "INFO"
 
     # --- Server ---
@@ -79,15 +54,11 @@ class Settings(BaseSettings):
     groq_max_tokens: int = 2048
 
     # --- Embedding ---
-    embedding_provider: EmbeddingProviderType = EmbeddingProviderType.SENTENCE_TRANSFORMERS
     embedding_model: str = "all-MiniLM-L6-v2"
-    embedding_dimension: int = 384
 
     # --- Vector Database ---
-    vector_db_provider: VectorDBProvider = VectorDBProvider.WEAVIATE
     weaviate_url: str = "http://localhost:9090"
     weaviate_api_key: str = ""
-    weaviate_default_collection: str = "documents"
 
     # --- Chunking ---
     chunk_min_tokens: int = 300
@@ -105,8 +76,11 @@ class Settings(BaseSettings):
     retrieval_top_k: int = 20
     hybrid_search_alpha: float = Field(default=0.5, ge=0.0, le=1.0)
 
+    # --- Agent ---
+    max_agent_iterations: int = 10
+    max_paralegal_recursion: int = 10
+
     # --- Ingestion ---
-    ingestion_strategy: IngestionStrategyType = IngestionStrategyType.SHARED
     max_batch_size: int = 100
     max_document_size_mb: int = 50
 

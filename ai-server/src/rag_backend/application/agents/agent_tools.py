@@ -50,6 +50,8 @@ def create_search_law_database_tool(
     vector_repo: VectorRepository,
     embedding_provider: EmbeddingProvider,
     reranker: Reranker,
+    retrieval_top_k: int = 20,
+    hybrid_search_alpha: float = 0.5,
 ):
     @tool
     async def search_law_database(
@@ -74,7 +76,8 @@ def create_search_law_database_tool(
             results = await vector_repo.hybrid_search(
                 query=query,
                 query_vector=query_vector,
-                top_k=20,
+                top_k=retrieval_top_k,
+                alpha=hybrid_search_alpha,
                 ten_day_du=law_name,
                 so_ky_hieu=so_ky_hieu,
                 dieu_number=dieu_number,
@@ -87,9 +90,9 @@ def create_search_law_database_tool(
             from rag_backend.application.utils.chunk_utils import expand_split_chunks_async
             expanded_results = await expand_split_chunks_async(results, vector_repo, law_name)
             
-            # Rerank to get top 5
+            # Rerank — use reranker's configured top_k from settings
             ranked_results = await reranker.rerank(
-                query=query, results=expanded_results, top_k=5
+                query=query, results=expanded_results
             )
                 
             chunks = []

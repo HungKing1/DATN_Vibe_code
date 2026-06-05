@@ -102,10 +102,9 @@ class Container:
         if "reranker" not in self._instances:
             self._instances["reranker"] = CrossEncoderReranker(
                 model_name=self._settings.reranker_model,
+                top_k=self._settings.reranker_top_k,
             )
         return self._instances["reranker"]  # type: ignore
-
-
 
     def mongo_reader(self) -> MongoDBLegalReader:
         if "mongo_reader" not in self._instances:
@@ -129,14 +128,10 @@ class Container:
             )
         return self._instances["ingestion_service"]  # type: ignore
 
-
-
     def prompt_manager(self) -> PromptManager:
         if "prompt_manager" not in self._instances:
             self._instances["prompt_manager"] = PromptManager()
         return self._instances["prompt_manager"]  # type: ignore
-
-
 
     # ──────────────────────────────────────────────
     # Presentation Controllers
@@ -148,8 +143,6 @@ class Container:
                 ingestion_service=self.ingestion_service(),
             )
         return self._instances["ingestion_controller"]  # type: ignore
-
-
 
     def multi_agent_service(self) -> MultiAgentService:
         if "multi_agent_service" not in self._instances:
@@ -164,10 +157,14 @@ class Container:
                 embedding_provider=self.embedding_provider(),
                 prompt_manager=self.prompt_manager(),
                 reranker=self.reranker(),
+                retrieval_top_k=self._settings.retrieval_top_k,
+                hybrid_search_alpha=self._settings.hybrid_search_alpha,
+                max_recursion=self._settings.max_paralegal_recursion,
             )
             self._instances["multi_agent_service"] = MultiAgentService(
                 master_agent=master,
                 paralegal_factory=paralegal_factory,
+                max_iterations=self._settings.max_agent_iterations,
             )
         return self._instances["multi_agent_service"]  # type: ignore
 
@@ -178,11 +175,9 @@ class Container:
             )
         return self._instances["agent_controller"]  # type: ignore
 
-
 # --- Module-level singleton ---
 
 _container: Container | None = None
-
 
 def init_container(settings: Settings) -> Container:
     """Initialize the global container."""
@@ -190,7 +185,6 @@ def init_container(settings: Settings) -> Container:
     _container = Container(settings)
     logger.info("DI container initialized")
     return _container
-
 
 def get_container() -> Container:
     """Get the global container instance."""

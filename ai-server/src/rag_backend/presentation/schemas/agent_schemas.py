@@ -7,8 +7,6 @@ class AgentQueryRequest(BaseModel):
     """Request schema for Agent query."""
 
     question: str = Field(..., description="User's legal question.")
-    max_iterations: int = Field(5, description="Maximum iterations for the master agent.")
-    max_search_per_paralegal: int = Field(3, description="Maximum search iterations per paralegal.")
 
 
 class AgentQueryResponse(BaseModel):

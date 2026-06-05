@@ -2,42 +2,7 @@
 
 from __future__ import annotations
 
-from enum import Enum
-from uuid import UUID, uuid4
-
 from pydantic import BaseModel, Field
-
-
-class QueryType(str, Enum):
-    """Classification of query intent."""
-
-    FACTUAL = "factual"
-    ANALYTICAL = "analytical"
-    SUMMARIZATION = "summarization"
-    COMPARISON = "comparison"
-    CONVERSATIONAL = "conversational"
-
-
-class InputModality(str, Enum):
-    """Input modality type."""
-
-    TEXT = "text"
-    VOICE = "voice"
-    IMAGE = "image"
-
-
-class Query(BaseModel):
-    """Represents a user query through the RAG pipeline."""
-
-    id: UUID = Field(default_factory=uuid4)
-    original_text: str
-    rewritten_text: str | None = None
-    query_type: QueryType | None = None
-    modality: InputModality = InputModality.TEXT
-    collection_names: list[str] = Field(default_factory=lambda: ["documents"])
-    metadata_filters: dict[str, str | int | float | bool] = Field(default_factory=dict)
-    top_k: int = 20
-    hybrid_alpha: float = 0.5
 
 
 class RetrievalResult(BaseModel):
@@ -69,16 +34,3 @@ class GenerationResult(BaseModel):
     prompt_tokens: int | None = None
     completion_tokens: int | None = None
     total_tokens: int | None = None
-
-
-class RAGResponse(BaseModel):
-    """Complete RAG pipeline response."""
-
-    id: UUID = Field(default_factory=uuid4)
-    query: str
-    answer: str
-    model: str = ""
-    retrieval_count: int = 0
-    reranked_count: int = 0
-    token_usage: dict[str, int] = Field(default_factory=dict)
-    metadata: dict = Field(default_factory=dict)

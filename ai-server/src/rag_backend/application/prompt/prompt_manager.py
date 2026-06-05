@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-import logging
 from typing import Any
-
-logger = logging.getLogger(__name__)
 
 
 class PromptManager:
@@ -83,15 +80,3 @@ QUY TẮC TUYỆT ĐỐI:
                 f"Missing template variable {e} in '{template_name}'"
             ) from e
 
-    def register_template(
-        self,
-        template_name: str,
-        template: str,
-    ) -> None:
-        """Register a new prompt template."""
-        self._templates[template_name] = template
-        logger.info("Registered prompt template: %s", template_name)
-
-    def list_templates(self) -> list[str]:
-        """List all registered template names."""
-        return list(self._templates.keys())

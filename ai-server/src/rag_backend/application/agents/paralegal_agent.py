@@ -19,11 +19,19 @@ class ParalegalAgentFactory:
         embedding_provider,
         prompt_manager,
         reranker,
+        retrieval_top_k: int = 20,
+        hybrid_search_alpha: float = 0.5,
+        max_recursion: int = 10,
     ):
         self._llm = llm_provider.get_underlying_model()
         self._prompt_manager = prompt_manager
+        self._max_recursion = max_recursion
         self._tools = [
-            create_search_law_database_tool(vector_repository, embedding_provider, reranker),
+            create_search_law_database_tool(
+                vector_repository, embedding_provider, reranker,
+                retrieval_top_k=retrieval_top_k,
+                hybrid_search_alpha=hybrid_search_alpha,
+            ),
             think_tool,
         ]
 
@@ -44,7 +52,7 @@ class ParalegalAgentFactory:
             
         result = await agent.ainvoke(
             {"messages": [HumanMessage(content=task_msg)]},
-            config={"recursion_limit": 10},
+            config={"recursion_limit": self._max_recursion},
         )
         
         # Extract research findings from tool calls

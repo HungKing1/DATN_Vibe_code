@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import Any
 from rag_backend.domain.models.query import GenerationResult
 
 
