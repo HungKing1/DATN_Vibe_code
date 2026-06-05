@@ -4,6 +4,7 @@ from langchain_core.messages import HumanMessage, ToolMessage
 from langgraph.graph import StateGraph, END
 from langgraph.types import Send
 
+from rag_backend.domain.exceptions import QueryPipelineError
 from rag_backend.domain.models.agent_state import DeepAgentState
 
 
@@ -118,8 +119,16 @@ class MultiAgentService:
             "max_iterations": self._max_iterations
         }
         
-        # Run graph
-        result = await self._graph.ainvoke(initial_state)
+        try:
+            # Run graph
+            result = await self._graph.ainvoke(initial_state)
+        except (QueryPipelineError, Exception) as e:
+            if isinstance(e, QueryPipelineError):
+                raise
+            raise QueryPipelineError(
+                "Multi-agent pipeline failed",
+                detail=str(e),
+            ) from e
         
         # extract final answer from last message
         # NOTE: Google Gemini via LangChain may return content as a list of

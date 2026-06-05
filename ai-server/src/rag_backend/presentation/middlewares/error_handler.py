@@ -17,6 +17,7 @@ from rag_backend.domain.exceptions import (
     LLMRateLimitError,
     QueryPipelineError,
     RAGBackendError,
+    RerankingError,
     VectorStoreError,
     OutOfDomainError,
 )
@@ -32,6 +33,7 @@ EXCEPTION_STATUS_MAP: dict[type, int] = {
     LLMRateLimitError: 429,
     LLMProviderError: 502,
     EmbeddingError: 502,
+    RerankingError: 500,
     IngestionError: 500,
     QueryPipelineError: 500,
     RAGBackendError: 500,

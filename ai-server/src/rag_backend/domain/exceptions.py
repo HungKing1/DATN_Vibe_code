@@ -48,19 +48,7 @@ class EmbeddingError(RAGBackendError):
     """Raised when embedding operations fail."""
 
 
-class EmbeddingDimensionMismatchError(EmbeddingError):
-    """Raised when embedding dimensions don't match expected."""
 
-    def __init__(self, expected: int, got: int) -> None:
-        super().__init__(f"Embedding dimension mismatch: expected {expected}, got {got}")
-        self.expected = expected
-        self.got = got
-
-
-# --- Chunking ---
-
-class ChunkingError(RAGBackendError):
-    """Raised when document chunking fails."""
 
 
 
@@ -72,9 +60,6 @@ class RerankingError(RAGBackendError):
 
 
 # --- Query ---
-
-class QueryRewriteError(RAGBackendError):
-    """Raised when query rewriting fails."""
 
 
 class QueryPipelineError(RAGBackendError):
@@ -92,15 +77,6 @@ class OutOfDomainError(RAGBackendError):
         )
         self.available_laws = available_laws
 
-
-# --- Law ---
-
-class LawNotFoundError(RAGBackendError):
-    """Raised when a law UUID does not exist in the vector store."""
-
-    def __init__(self, law_uuid: str) -> None:
-        super().__init__(f"Law not found: {law_uuid}")
-        self.law_uuid = law_uuid
 
 
 # --- Ingestion ---

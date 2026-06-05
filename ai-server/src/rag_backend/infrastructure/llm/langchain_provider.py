@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from rag_backend.domain.exceptions import LLMProviderError
+from rag_backend.domain.exceptions import LLMProviderError, LLMRateLimitError
 from rag_backend.domain.interfaces.llm_provider import LLMProvider
 from rag_backend.domain.models.query import GenerationResult
 
@@ -89,6 +90,12 @@ class LangChainOpenAIProvider(LLMProvider):
             )
 
         except Exception as e:
+            err_str = str(e).lower()
+            if "rate_limit" in err_str or "rate limit" in err_str or "429" in err_str:
+                raise LLMRateLimitError(
+                    "LLM rate limit exceeded",
+                    detail=str(e),
+                ) from e
             raise LLMProviderError(
                 f"LLM generation failed: {e}",
                 detail=str(e),

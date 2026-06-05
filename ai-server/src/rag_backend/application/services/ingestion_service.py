@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 
-from rag_backend.domain.exceptions import IngestionError
+from rag_backend.domain.exceptions import DocumentProcessingError, IngestionError
 from rag_backend.domain.interfaces.chunking_strategy import ChunkingStrategy
 from rag_backend.domain.interfaces.embedding_provider import EmbeddingProvider
 from rag_backend.domain.interfaces.vector_repository import VectorRepository
@@ -54,11 +54,9 @@ class IngestionService:
             chunks = await self._chunking.chunk(articles, doc_meta)
             
             if not chunks:
-                logger.warning("No chunks generated for %s", so_ky_hieu)
-                return IngestionResult(
-                    so_ky_hieu=so_ky_hieu,
-                    ten_day_du=doc_meta["ten_day_du"],
-                    chunks_stored=0,
+                raise DocumentProcessingError(
+                    f"Chunking không sinh ra chunk nào từ '{ten_day_du}'",
+                    detail=f"so_ky_hieu={so_ky_hieu}, số articles={len(articles)}",
                 )
 
             # 4. Embed chunks
@@ -88,7 +86,7 @@ class IngestionService:
                 chunks_stored=len(stored_ids),
             )
 
-        except IngestionError:
+        except (IngestionError, DocumentProcessingError):
             raise
         except Exception as e:
             raise IngestionError(
