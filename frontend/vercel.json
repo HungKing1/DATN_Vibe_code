@@ -3,6 +3,10 @@
         {
             "source": "/api/:path*",
             "destination": "https://datn-vibe-code.onrender.com/api/:path*"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
         }
     ]
 }
