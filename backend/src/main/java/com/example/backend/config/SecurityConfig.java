@@ -50,11 +50,14 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
+        // allowedOriginPatterns supports credentials + wildcard subdomains
+        // Covers: localhost dev, all Vercel preview/production deployments
+        config.setAllowedOriginPatterns(List.of(
                 "http://localhost:5173",
-                "https://datn-vibe-code-hgvh3le4o-hungking1s-projects.vercel.app"));
+                "https://datn-vibe-code.vercel.app",
+                "https://*.vercel.app"
+        ));
         config.setAllowCredentials(true);
-        config.setAllowedOriginPatterns(List.of("*")); // Change to specific origin in production
         config.setAllowedHeaders(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
