@@ -112,3 +112,11 @@ export interface AiHealthResponse {
     weaviate?: string;
   };
 }
+
+export interface LegalQA {
+  id: string;
+  soKyHieu: string;
+  dieu: number;
+  question: string;
+  answer: string; // Markdown
+}

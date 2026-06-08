@@ -22,7 +22,8 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      throw new Error(errorData?.message || `API Error: ${response.status} ${response.statusText}`);
+      const errorMessage = errorData?.error?.message || errorData?.message || `API Error: ${response.status} ${response.statusText}`;
+      throw new Error(errorMessage);
     }
 
     // Nếu response status là 204 No Content

@@ -18,6 +18,7 @@ import { LoginPage } from './pages/auth/LoginPage';
 import { SignupPage } from './pages/auth/SignupPage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { IngestionPage } from './pages/admin/IngestionPage';
+import { LegalQAPage } from './pages/legalQA/LegalQAPage';
 
 export const router = createBrowserRouter([
   // ---------------------------------------------
@@ -63,6 +64,7 @@ export const router = createBrowserRouter([
       { index: true, Component: WorkspacePage },
       { path: 'legal', Component: LegalDocumentPage },
       { path: 'legal/:soKyHieu', Component: LegalDocumentViewer },
+      { path: 'legal-qa', Component: LegalQAPage },
     ],
   },
 ]);

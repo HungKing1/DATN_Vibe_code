@@ -3,13 +3,16 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   ChevronLeft, ChevronRight, Search, Plus, Check, Edit2, X, Trash2,
   FolderOpen, FolderClosed, FileText, FileSpreadsheet, Image, Globe, ChevronDown, ChevronUp,
-  BarChart3, CreditCard, HelpCircle, Scale, MessageSquare, Map, Settings, Command, LogOut, BookOpen
+  BarChart3, CreditCard, HelpCircle, Scale, MessageSquare, Map, Settings, Command, LogOut, BookOpen, Layers
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { Conversation } from '../types';
+import { Conversation, LegalDocumentSummary } from '../types';
 import { SearchConversationModal } from './SearchConversationModal';
+import { getLegalDocumentList } from '../api/legalApi';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 
 function ConversationItem({
   conversation,
@@ -118,10 +121,32 @@ export function LeftSidebar() {
   const location = useLocation();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
+  const [laws, setLaws] = useState<LegalDocumentSummary[]>([]);
+  const [loadingLaws, setLoadingLaws] = useState(false);
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/legal-qa')) {
+      const fetchLaws = async () => {
+        setLoadingLaws(true);
+        try {
+          const res = await getLegalDocumentList(0, 100);
+          setLaws(res.content);
+        } catch (err: any) {
+          console.error(err);
+          toast.error("Không thể tải danh sách văn bản pháp luật: " + (err.message || 'Lỗi mạng'));
+        } finally {
+          setLoadingLaws(false);
+        }
+      };
+      fetchLaws();
+    }
+  }, [location.pathname]);
+
 
   const navItems = [
     { path: '/', icon: <MessageSquare className="w-4 h-4" />, label: 'Trò chuyện' },
     { path: '/legal', icon: <BookOpen className="w-4 h-4" />, label: 'Văn bản Pháp luật' },
+    { path: '/legal-qa', icon: <Layers className="w-4 h-4" />, label: 'Bộ câu hỏi Pháp luật' },
   ];
 
   return (
@@ -170,7 +195,7 @@ export function LeftSidebar() {
         {navItems.map(item => {
           const active = item.path === '/'
             ? location.pathname === '/'
-            : location.pathname.startsWith(item.path);
+            : location.pathname === item.path || location.pathname.startsWith(item.path + '/');
           return (
             <button
               key={item.path}
@@ -199,56 +224,94 @@ export function LeftSidebar() {
       </div>
 
       <div className="flex-1 min-h-0 flex flex-col pt-2">
-        {!sidebarCollapsed && (
-          <div className="flex items-center justify-between px-3 pb-1 flex-shrink-0">
-            <span className="text-xs text-muted-foreground uppercase tracking-wider">Lịch sử trò chuyện</span>
-            <button
-              onClick={async () => {
-                const newId = await createConversation('Cuộc trò chuyện mới');
-                if (newId) navigate(`/?c=${newId}`);
-              }}
-              className="text-xs flex items-center gap-1 text-blue-500 hover:text-blue-600 transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Mới
-            </button>
-          </div>
-        )}
+        {location.pathname.startsWith('/legal-qa') ? (
+          <>
+            {!sidebarCollapsed && (
+              <div className="flex items-center justify-between px-3 pb-1 flex-shrink-0">
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">Văn bản pháp luật</span>
+              </div>
+            )}
+            <div className="flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin flex flex-col gap-0.5">
+              {loadingLaws ? (
+                !sidebarCollapsed && <div className="text-xs text-muted-foreground px-2">Đang tải...</div>
+              ) : (
+                laws.map(law => (
+                  <button
+                    key={law.soKyHieu}
+                    onClick={() => navigate(`/legal-qa?soKyHieu=${encodeURIComponent(law.soKyHieu)}&title=${encodeURIComponent(`${law.loaiVanBan} ${law.tenDayDu}`)}`)}
+                    className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg transition-colors text-left w-full
+                      ${location.search.includes(encodeURIComponent(law.soKyHieu)) ? 'bg-blue-50 text-blue-700' : 'hover:bg-accent text-foreground'}`}
+                    title={sidebarCollapsed ? `${law.loaiVanBan} ${law.tenDayDu}` : undefined}
+                  >
+                    <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 text-xs bg-indigo-100">
+                      📄
+                    </div>
+                    {!sidebarCollapsed && (
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs truncate" title={`${law.loaiVanBan} ${law.tenDayDu}`}>
+                          {law.loaiVanBan} {law.tenDayDu}
+                        </p>
+                      </div>
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            {!sidebarCollapsed && (
+              <div className="flex items-center justify-between px-3 pb-1 flex-shrink-0">
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">Lịch sử trò chuyện</span>
+                <button
+                  onClick={async () => {
+                    const newId = await createConversation('Cuộc trò chuyện mới');
+                    if (newId) navigate(`/?c=${newId}`);
+                  }}
+                  className="text-xs flex items-center gap-1 text-blue-500 hover:text-blue-600 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Mới
+                </button>
+              </div>
+            )}
 
-        <div className="flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin flex flex-col gap-0.5">
-          {[...conversations].reverse().map(nb => (
-            <ConversationItem
-              key={nb.id}
-              conversation={nb}
-              isActive={nb.id === activeConversationId}
-              onClick={() => {
-                setActiveConversationId(nb.id);
-                navigate(`/?c=${nb.id}`);
-              }}
-              onRename={(newTitle) => renameConversation(nb.id, newTitle)}
-              onDelete={async () => {
-                const wasActive = nb.id === activeConversationId;
-                await deleteConversation(nb.id);
-                if (wasActive) {
-                  navigate('/');
-                }
-              }}
-              collapsed={sidebarCollapsed}
-            />
-          ))}
-          {sidebarCollapsed && (
-            <button
-              onClick={async () => {
-                const newId = await createConversation('Cuộc trò chuyện mới');
-                if (newId) navigate(`/?c=${newId}`);
-              }}
-              className="w-8 h-8 mx-auto mt-2 rounded-lg flex items-center justify-center hover:bg-accent text-muted-foreground transition-colors border border-dashed border-border"
-              title="Cuộc trò chuyện mới"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          )}
-        </div>
+            <div className="flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin flex flex-col gap-0.5">
+              {[...conversations].reverse().map(nb => (
+                <ConversationItem
+                  key={nb.id}
+                  conversation={nb}
+                  isActive={nb.id === activeConversationId}
+                  onClick={() => {
+                    setActiveConversationId(nb.id);
+                    navigate(`/?c=${nb.id}`);
+                  }}
+                  onRename={(newTitle) => renameConversation(nb.id, newTitle)}
+                  onDelete={async () => {
+                    const wasActive = nb.id === activeConversationId;
+                    await deleteConversation(nb.id);
+                    if (wasActive) {
+                      navigate('/');
+                    }
+                  }}
+                  collapsed={sidebarCollapsed}
+                />
+              ))}
+              {sidebarCollapsed && (
+                <button
+                  onClick={async () => {
+                    const newId = await createConversation('Cuộc trò chuyện mới');
+                    if (newId) navigate(`/?c=${newId}`);
+                  }}
+                  className="w-8 h-8 mx-auto mt-2 rounded-lg flex items-center justify-center hover:bg-accent text-muted-foreground transition-colors border border-dashed border-border"
+                  title="Cuộc trò chuyện mới"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
 

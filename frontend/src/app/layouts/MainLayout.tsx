@@ -31,7 +31,7 @@ export function Layout() {
           </div>
           
           {/* Side Panel for Legal Reference */}
-          {isWorkspace && <ReferencePanel />}
+          {(location.pathname === '/' || location.pathname.startsWith('/legal-qa')) && <ReferencePanel />}
         </div>
       </div>
     </div>
