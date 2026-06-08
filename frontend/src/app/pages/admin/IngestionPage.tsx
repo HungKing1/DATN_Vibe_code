@@ -72,15 +72,15 @@ export function IngestionPage() {
 
 
 
-  const handleRowClick = async (tenDoc: string) => {
-    if (!window.confirm(`Bạn có chắc muốn embedding văn bản: ${tenDoc}?`)) return;
+  const handleRowClick = async (doc: LegalDocumentSummary) => {
+    if (!window.confirm(`Bạn có chắc muốn embedding văn bản: ${doc.tenDayDu}?`)) return;
 
     setUploading(true);
     setUploadError('');
     setUploadSuccess('');
 
     try {
-      const result = await adminApi.createLaw(tenDoc.trim());
+      const result = await adminApi.createLaw(doc.soKyHieu);
       if (result.success) {
         setUploadSuccess(`Đã import thành công: ${result.so_ky_hieu} (${result.chunks_stored} chunks)`);
         await loadLaws();
@@ -201,7 +201,7 @@ export function IngestionPage() {
                       <TableRow
                         key={doc.soKyHieu}
                         className={`transition-colors ${isVectorized ? 'bg-muted/10 opacity-70 cursor-default' : 'cursor-pointer hover:bg-muted/30'}`}
-                        onClick={() => !isVectorized && handleRowClick(doc.tenDayDu)}
+                        onClick={() => !isVectorized && handleRowClick(doc)}
                       >
                         <TableCell className="py-2 text-sm font-mono">{doc.soKyHieu}</TableCell>
                         <TableCell className="py-2 text-sm">

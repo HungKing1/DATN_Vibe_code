@@ -11,10 +11,10 @@ export const adminApi = {
     fetchApi<LawInfo[]>('/admin/laws'),
 
   /** Import Law từ MongoDB vào Weaviate */
-  createLaw: async (ten_day_du: string): Promise<LawCreateResponse> => {
+  createLaw: async (so_ky_hieu: string): Promise<LawCreateResponse> => {
     return fetchApi<LawCreateResponse>('/admin/laws', {
       method: 'POST',
-      body: JSON.stringify({ ten_day_du }),
+      body: JSON.stringify({ so_ky_hieu }),
     });
   },
 
@@ -22,7 +22,7 @@ export const adminApi = {
   reloadLaw: async (so_ky_hieu: string, ten_day_du: string): Promise<LawCreateResponse> => {
     return fetchApi<LawCreateResponse>(`/admin/laws/reload?soKyHieu=${encodeURIComponent(so_ky_hieu)}`, {
       method: 'POST',
-      body: JSON.stringify({ ten_day_du }),
+      body: JSON.stringify({ so_ky_hieu }),
     });
   },
 

@@ -142,7 +142,7 @@ export function ChatPanel() {
 
   const handleMicClick = () => {
     if (!browserSupportsSpeechRecognition) return;
-    
+
     if (listening) {
       SpeechRecognition.stopListening();
     } else {
@@ -159,11 +159,11 @@ export function ChatPanel() {
   const handleSend = () => {
     const trimmed = input.trim();
     if (!trimmed || isAIThinking) return;
-    
+
     if (listening) {
       SpeechRecognition.stopListening();
     }
-    
+
     sendMessage(trimmed);
     setInput('');
     inputRef.current?.focus();
@@ -251,9 +251,8 @@ export function ChatPanel() {
                 <button
                   type="button"
                   onClick={handleMicClick}
-                  className={`p-1.5 rounded-full transition-colors flex items-center justify-center ${
-                    listening ? 'bg-red-100 text-red-500 animate-pulse' : 'text-muted-foreground hover:bg-muted'
-                  }`}
+                  className={`p-1.5 rounded-full transition-colors flex items-center justify-center ${listening ? 'bg-red-100 text-red-500 animate-pulse' : 'text-muted-foreground hover:bg-muted'
+                    }`}
                   title={listening ? "Đang thu âm..." : "Nhập bằng giọng nói"}
                 >
                   {listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}

@@ -17,10 +17,10 @@ class MongoDBLegalReader:
         self._db = self._client[db_name]
         logger.info("MongoDBLegalReader initialized for db: %s", db_name)
 
-    async def find_by_name(self, ten_day_du: str) -> dict[str, Any] | None:
-        """Find a legal document by its exact or partial name (case-insensitive)."""
+    async def find_by_so_ky_hieu(self, so_ky_hieu: str) -> dict[str, Any] | None:
+        """Find a legal document by its exact so_ky_hieu."""
         doc = await self._db.legal_documents.find_one({
-            "ten_day_du": {"$regex": ten_day_du, "$options": "i"}
+            "so_ky_hieu": so_ky_hieu
         })
         if doc:
             # Motor returns a dict with ObjectId, which we can cast to string if needed

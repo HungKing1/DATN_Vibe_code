@@ -35,28 +35,28 @@ class IngestionService:
         self._mongo_reader = mongo_reader
         self._embedding_batch_size = embedding_batch_size
 
-    async def ingest_from_mongodb(self, ten_day_du: str) -> IngestionResult:
-        """Ingest a legal document from MongoDB by its name."""
+    async def ingest_from_mongodb(self, so_ky_hieu: str) -> IngestionResult:
+        """Ingest a legal document from MongoDB by its so_ky_hieu."""
         try:
             # 1. Find document in MongoDB
-            doc_meta = await self._mongo_reader.find_by_name(ten_day_du)
+            doc_meta = await self._mongo_reader.find_by_so_ky_hieu(so_ky_hieu)
             if not doc_meta:
-                raise IngestionError(f"Không tìm thấy văn bản '{ten_day_du}' trong MongoDB")
+                raise IngestionError(f"Không tìm thấy văn bản có số ký hiệu '{so_ky_hieu}' trong MongoDB")
                 
-            so_ky_hieu = doc_meta["so_ky_hieu"]
+            so_ky_hieu_doc = doc_meta["so_ky_hieu"]
             
             # 2. Get articles
-            articles = await self._mongo_reader.get_articles(so_ky_hieu)
+            articles = await self._mongo_reader.get_articles(so_ky_hieu_doc)
             if not articles:
-                logger.warning("No articles found for %s", so_ky_hieu)
+                logger.warning("No articles found for %s", so_ky_hieu_doc)
                 
             # 3. Chunk articles
             chunks = await self._chunking.chunk(articles, doc_meta)
             
             if not chunks:
                 raise DocumentProcessingError(
-                    f"Chunking không sinh ra chunk nào từ '{ten_day_du}'",
-                    detail=f"so_ky_hieu={so_ky_hieu}, số articles={len(articles)}",
+                    f"Chunking không sinh ra chunk nào từ '{so_ky_hieu_doc}'",
+                    detail=f"so_ky_hieu={so_ky_hieu_doc}, số articles={len(articles)}",
                 )
 
             # 4. Embed chunks
@@ -76,12 +76,12 @@ class IngestionService:
 
             logger.info(
                 "Ingested '%s': %d chunks",
-                ten_day_du,
+                so_ky_hieu_doc,
                 len(stored_ids),
             )
 
             return IngestionResult(
-                so_ky_hieu=so_ky_hieu,
+                so_ky_hieu=so_ky_hieu_doc,
                 ten_day_du=doc_meta["ten_day_du"],
                 chunks_stored=len(stored_ids),
             )
@@ -90,7 +90,7 @@ class IngestionService:
             raise
         except Exception as e:
             raise IngestionError(
-                f"Ingestion failed for {ten_day_du}",
+                f"Ingestion failed for {so_ky_hieu}",
                 detail=str(e),
             ) from e
 

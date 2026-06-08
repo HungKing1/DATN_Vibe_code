@@ -44,9 +44,12 @@ public class AdminController {
      */
     @PostMapping("/laws")
     public ApiResponse<LawCreateResponse> createLaw(@RequestBody Map<String, String> body) {
-        String tenDayDu = body.get("ten_day_du");
-        log.info("Admin ingesting Law from MongoDB: {}", tenDayDu);
-        LawCreateResponse response = aiServerClient.ingestFromMongodb(tenDayDu);
+        String soKyHieu = body.get("so_ky_hieu");
+        if (soKyHieu == null || soKyHieu.trim().isEmpty()) {
+            throw new IllegalArgumentException("so_ky_hieu is required in the request body");
+        }
+        log.info("Admin ingesting Law from MongoDB: {}", soKyHieu);
+        LawCreateResponse response = aiServerClient.ingestFromMongodb(soKyHieu);
         return ApiResponse.success(response);
     }
 
@@ -58,9 +61,12 @@ public class AdminController {
     public ApiResponse<LawCreateResponse> reloadLaw(
             @RequestParam String soKyHieu,
             @RequestBody Map<String, String> body) {
-        String tenDayDu = body.get("ten_day_du");
-        log.info("Admin reloading Law so_ky_hieu={} from MongoDB: {}", soKyHieu, tenDayDu);
-        LawCreateResponse response = aiServerClient.reloadLaw(soKyHieu, tenDayDu);
+        String soKyHieuBody = body.get("so_ky_hieu");
+        if (soKyHieuBody == null || soKyHieuBody.trim().isEmpty()) {
+            soKyHieuBody = soKyHieu;
+        }
+        log.info("Admin reloading Law so_ky_hieu={} from MongoDB", soKyHieu);
+        LawCreateResponse response = aiServerClient.reloadLaw(soKyHieu, soKyHieuBody);
         return ApiResponse.success(response);
     }
 

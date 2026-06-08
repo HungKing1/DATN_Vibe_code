@@ -31,8 +31,8 @@ class IngestionController:
         self,
         request: MongoIngestionRequest,
     ) -> IngestionResultDto:
-        """Ingest a law from MongoDB by name."""
-        result = await self._service.ingest_from_mongodb(request.ten_day_du)
+        """Ingest a law from MongoDB by so_ky_hieu."""
+        result = await self._service.ingest_from_mongodb(request.so_ky_hieu)
         
         return IngestionResultDto(
             so_ky_hieu=result.so_ky_hieu,

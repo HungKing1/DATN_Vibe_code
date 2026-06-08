@@ -10,8 +10,8 @@ from pydantic import BaseModel
 # ──────────────────────────────────────────────
 
 class MongoIngestionRequest(BaseModel):
-    """Request to ingest a law from MongoDB by name."""
-    ten_day_du: str
+    """Request to ingest a law from MongoDB by so_ky_hieu."""
+    so_ky_hieu: str
 
 
 class IngestionResultDto(BaseModel):

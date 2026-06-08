@@ -90,13 +90,16 @@ public class AiServerClient {
         }
     }
 
-    public LawCreateResponse ingestFromMongodb(String tenDayDu) {
-        log.info("Ingesting Law from MongoDB with name: {}", tenDayDu);
+    public LawCreateResponse ingestFromMongodb(String soKyHieu) {
+        log.info("Ingesting Law from MongoDB with so_ky_hieu: {}", soKyHieu);
+        if (soKyHieu == null) {
+            throw new IllegalArgumentException("so_ky_hieu cannot be null");
+        }
         try {
             return aiServerWebClient.post()
                     .uri("/api/v1/ingestion/laws")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(Map.of("ten_day_du", tenDayDu))
+                    .bodyValue(Map.of("so_ky_hieu", soKyHieu))
                     .retrieve()
                     .bodyToMono(LawCreateResponse.class)
                     .block();
@@ -106,13 +109,16 @@ public class AiServerClient {
         }
     }
 
-    public LawCreateResponse reloadLaw(String soKyHieu, String tenDayDu) {
-        log.info("Reloading Law from AI Server with so_ky_hieu: {} and ten_day_du: {}", soKyHieu, tenDayDu);
+    public LawCreateResponse reloadLaw(String soKyHieu, String soKyHieuBody) {
+        log.info("Reloading Law from AI Server with so_ky_hieu: {}", soKyHieu);
+        if (soKyHieu == null || soKyHieuBody == null) {
+            throw new IllegalArgumentException("so_ky_hieu cannot be null");
+        }
         try {
             return aiServerWebClient.post()
                     .uri("/api/v1/ingestion/laws/" + soKyHieu + "/reload")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(Map.of("ten_day_du", tenDayDu))
+                    .bodyValue(Map.of("so_ky_hieu", soKyHieuBody))
                     .retrieve()
                     .bodyToMono(LawCreateResponse.class)
                     .block();
