@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Send, Copy,
-  Sparkles, BarChart2, Zap, User, Bot,
-  Check, Brain, Mic, MicOff
+  Sparkles, User, Bot,
+  Check, Brain, Mic, MicOff, AlertCircle
 } from 'lucide-react';
 import 'regenerator-runtime/runtime';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
@@ -129,9 +129,11 @@ export function ChatPanel() {
     transcript,
     listening,
     resetTranscript,
-    browserSupportsSpeechRecognition
+    browserSupportsSpeechRecognition,
+    isMicrophoneAvailable
   } = useSpeechRecognition();
   const previousInputRef = useRef('');
+  const [micError, setMicError] = useState<string | null>(null);
 
   useEffect(() => {
     if (listening) {
@@ -140,12 +142,28 @@ export function ChatPanel() {
     }
   }, [transcript, listening]);
 
+  // Clear mic error after 4s
+  useEffect(() => {
+    if (micError) {
+      const t = setTimeout(() => setMicError(null), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [micError]);
+
   const handleMicClick = () => {
-    if (!browserSupportsSpeechRecognition) return;
+    if (!browserSupportsSpeechRecognition) {
+      setMicError('Trình duyệt của bạn không hỗ trợ nhận giọng nói. Vui lòng dùng Chrome.');
+      return;
+    }
+    if (!isMicrophoneAvailable) {
+      setMicError('Vui lòng cho phép truy cập microphone trong cài đặt trình duyệt.');
+      return;
+    }
 
     if (listening) {
       SpeechRecognition.stopListening();
     } else {
+      setMicError(null);
       previousInputRef.current = input;
       resetTranscript();
       SpeechRecognition.startListening({ continuous: true, language: 'vi-VN' });
@@ -244,20 +262,56 @@ export function ChatPanel() {
             className="w-full bg-transparent px-4 pt-3 pb-2 text-sm text-foreground placeholder:text-muted-foreground outline-none resize-none leading-relaxed"
             style={{ minHeight: '44px', maxHeight: '128px', overflowY: 'auto' }}
           />
+          {/* Mic error toast */}
+          <AnimatePresence>
+            {micError && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="mx-3 mb-1.5 flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600"
+              >
+                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                {micError}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <div className="flex items-center justify-between px-3 pb-2.5">
             <div className="flex items-center gap-1">
 
-              {browserSupportsSpeechRecognition && (
-                <button
-                  type="button"
-                  onClick={handleMicClick}
-                  className={`p-1.5 rounded-full transition-colors flex items-center justify-center ${listening ? 'bg-red-100 text-red-500 animate-pulse' : 'text-muted-foreground hover:bg-muted'
-                    }`}
-                  title={listening ? "Đang thu âm..." : "Nhập bằng giọng nói"}
-                >
-                  {listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                </button>
-              )}
+              {/* Show mic button always; show warning icon if no support */}
+              <button
+                type="button"
+                onClick={handleMicClick}
+                className={`p-1.5 rounded-full transition-colors flex items-center justify-center ${
+                  listening
+                    ? 'bg-red-100 text-red-500 animate-pulse'
+                    : !browserSupportsSpeechRecognition || !isMicrophoneAvailable
+                    ? 'text-muted-foreground/40 hover:bg-muted cursor-not-allowed'
+                    : 'text-muted-foreground hover:bg-muted'
+                }`}
+                title={
+                  listening
+                    ? 'Đang thu âm... (click để dừng)'
+                    : !browserSupportsSpeechRecognition
+                    ? 'Trình duyệt không hỗ trợ giọng nói (dùng Chrome)'
+                    : !isMicrophoneAvailable
+                    ? 'Microphone chưa được cấp quyền'
+                    : 'Nhập bằng giọng nói'
+                }
+              >
+                {listening ? (
+                  <MicOff className="w-4 h-4" />
+                ) : !browserSupportsSpeechRecognition ? (
+                  <span className="relative">
+                    <Mic className="w-4 h-4" />
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-400 rounded-full" />
+                  </span>
+                ) : (
+                  <Mic className="w-4 h-4" />
+                )}
+              </button>
 
             </div>
             <div className="flex items-center gap-2">
