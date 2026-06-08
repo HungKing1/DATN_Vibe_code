@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Send, ThumbsUp, ThumbsDown, Copy, RefreshCw,
+  Send, Copy,
   Sparkles, BarChart2, Zap, User, Bot,
   Check, Brain, Mic, MicOff
 } from 'lucide-react';
@@ -84,7 +84,16 @@ function MessageBubble({ message, isStreaming, streamContent }: {
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="bg-card border border-border rounded-2xl rounded-tl-sm px-4 py-3.5 shadow-sm">
+        <div className="relative group bg-card border border-border rounded-2xl rounded-tl-sm pl-4 pr-12 py-3.5 shadow-sm">
+          {!isStreaming && (
+            <button
+              onClick={handleCopy}
+              className="absolute top-2.5 right-2.5 p-1.5 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors bg-background/50 border border-transparent hover:border-border"
+              title="Copy"
+            >
+              {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+            </button>
+          )}
           <MarkdownRenderer content={displayContent} />
 
           {/* Streaming cursor */}
@@ -99,19 +108,6 @@ function MessageBubble({ message, isStreaming, streamContent }: {
 
         </div>
 
-        {/* Actions */}
-        {!isStreaming && (
-          <div className="flex items-center gap-1 mt-1.5 ml-1">
-            <button onClick={handleCopy} className="action-btn" title="Copy">
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied && <span className="text-xs ml-1 text-emerald-600">Đã sao chép!</span>}
-            </button>
-            <button className="action-btn"><ThumbsUp className="w-3.5 h-3.5" /></button>
-            <button className="action-btn"><ThumbsDown className="w-3.5 h-3.5" /></button>
-            <button className="action-btn"><RefreshCw className="w-3.5 h-3.5" /></button>
-
-          </div>
-        )}
 
       </div>
     </motion.div>

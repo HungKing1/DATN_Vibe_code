@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   ChevronLeft, ChevronRight, Search, Plus, Check, Edit2, X, Trash2,
   FolderOpen, FolderClosed, FileText, FileSpreadsheet, Image, Globe, ChevronDown, ChevronUp,
-  BarChart3, CreditCard, HelpCircle, Brain, MessageSquare, Map, Settings, Command, LogOut, BookOpen
+  BarChart3, CreditCard, HelpCircle, Scale, MessageSquare, Map, Settings, Command, LogOut, BookOpen
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router';
 import { useApp } from '../context/AppContext';
@@ -142,7 +142,7 @@ export function LeftSidebar() {
               className="flex items-center gap-2"
             >
               <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center flex-shrink-0">
-                <Brain className="w-4 h-4 text-white" />
+                <Scale className="w-4 h-4 text-white" />
               </div>
               <span className="text-sm text-foreground" style={{ fontWeight: 600 }}>Hệ thống AI pháp luật</span>
             </motion.div>
@@ -150,7 +150,7 @@ export function LeftSidebar() {
         </AnimatePresence>
         {sidebarCollapsed && (
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center mx-auto">
-            <Brain className="w-4 h-4 text-white" />
+            <Scale className="w-4 h-4 text-white" />
           </div>
         )}
         {!sidebarCollapsed && (
@@ -287,9 +287,9 @@ export function LeftSidebar() {
       </div>
 
       {/* Search Modal */}
-      <SearchConversationModal 
-        isOpen={isSearchOpen} 
-        onClose={() => setIsSearchOpen(false)} 
+      <SearchConversationModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
       />
     </motion.aside>
   );

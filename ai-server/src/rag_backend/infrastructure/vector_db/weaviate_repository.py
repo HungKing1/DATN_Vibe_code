@@ -178,7 +178,7 @@ class WeaviateRepository(VectorRepository):
             # Use aggregation to group by so_ky_hieu
             response = chunk_col.aggregate.over_all(
                 group_by=GroupByAggregate(prop="so_ky_hieu"),
-                return_metrics=[]
+                return_metrics=None
             )
             
             laws = []

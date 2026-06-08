@@ -74,7 +74,7 @@ export function IngestionPage() {
 
   const handleRowClick = async (tenDoc: string) => {
     if (!window.confirm(`Bạn có chắc muốn embedding văn bản: ${tenDoc}?`)) return;
-    
+
     setUploading(true);
     setUploadError('');
     setUploadSuccess('');
@@ -96,10 +96,10 @@ export function IngestionPage() {
 
   const handleReload = async (law: LawInfo) => {
     if (!window.confirm(`Bạn có chắc muốn tải lại (re-embedding) văn bản ${law.so_ky_hieu}? Dữ liệu vector cũ sẽ bị xóa.`)) return;
-    
+
     setUploadError('');
     setUploadSuccess('');
-    
+
     try {
       const result = await adminApi.reloadLaw(law.so_ky_hieu, law.ten_day_du);
       if (result.success) {
@@ -198,32 +198,33 @@ export function IngestionPage() {
                   mongoDocs.map((doc) => {
                     const isVectorized = laws.some(law => law.so_ky_hieu === doc.soKyHieu);
                     return (
-                    <TableRow 
-                      key={doc.soKyHieu} 
-                      className={`transition-colors ${isVectorized ? 'bg-muted/10 opacity-70 cursor-default' : 'cursor-pointer hover:bg-muted/30'}`}
-                      onClick={() => !isVectorized && handleRowClick(doc.tenDayDu)}
-                    >
-                      <TableCell className="py-2 text-sm font-mono">{doc.soKyHieu}</TableCell>
-                      <TableCell className="py-2 text-sm">
-                        {doc.tenDayDu}
-                        {isVectorized && (
-                          <Badge variant="secondary" className="ml-2 text-[10px] h-5 font-normal">
-                            <CheckCircle2 className="w-3 h-3 mr-1" />
-                            Đã vector hóa
+                      <TableRow
+                        key={doc.soKyHieu}
+                        className={`transition-colors ${isVectorized ? 'bg-muted/10 opacity-70 cursor-default' : 'cursor-pointer hover:bg-muted/30'}`}
+                        onClick={() => !isVectorized && handleRowClick(doc.tenDayDu)}
+                      >
+                        <TableCell className="py-2 text-sm font-mono">{doc.soKyHieu}</TableCell>
+                        <TableCell className="py-2 text-sm">
+                          {doc.tenDayDu}
+                          {isVectorized && (
+                            <Badge variant="secondary" className="ml-2 text-[10px] h-5 font-normal">
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                              Đã vector hóa
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-2">
+                          <Badge variant="outline" className="text-xs font-normal">
+                            {doc.trangThai}
                           </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="py-2">
-                        <Badge variant="outline" className="text-xs font-normal">
-                          {doc.trangThai}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  )})
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
                 )}
               </TableBody>
             </Table>
-            
+
             {/* Pagination */}
             {mongoTotalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-2 border-t border-border bg-muted/10">
@@ -294,8 +295,8 @@ export function IngestionPage() {
             <h2 className="text-sm font-semibold text-foreground">Văn bản đã được Vector hóa</h2>
             <Badge variant="secondary" className="font-normal">{laws.length}</Badge>
           </div>
-          <button 
-            onClick={loadLaws} 
+          <button
+            onClick={loadLaws}
             disabled={refreshing}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors disabled:opacity-50"
           >
@@ -364,7 +365,7 @@ export function IngestionPage() {
                           </TooltipTrigger>
                           <TooltipContent>Tải lại văn bản (Re-embed)</TooltipContent>
                         </Tooltip>
-                        
+
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button

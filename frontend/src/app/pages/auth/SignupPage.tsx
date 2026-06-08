@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
+import { Brain } from 'lucide-react';
 
 export function SignupPage() {
   const [email, setEmail] = useState('');
@@ -37,8 +38,8 @@ export function SignupPage() {
   return (
     <div className="bg-card p-8 rounded-2xl border border-border shadow-sm">
       <div className="text-center mb-6">
-        <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-          <span className="text-2xl">⚖️</span>
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center mx-auto mb-4 flex-shrink-0">
+          <Brain className="w-6 h-6 text-white" />
         </div>
         <h1 className="text-2xl font-bold">Tạo tài khoản</h1>
       </div>
