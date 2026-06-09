@@ -1,12 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Send, Copy,
   Sparkles, User, Bot,
   Check, Brain, Mic, MicOff, AlertCircle
 } from 'lucide-react';
-import 'regenerator-runtime/runtime';
-import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import { useNavigate } from 'react-router';
 import { useApp } from '../context/AppContext';
 import { MarkdownRenderer } from './MarkdownRenderer';
@@ -114,6 +112,111 @@ function MessageBubble({ message, isStreaming, streamContent }: {
   );
 }
 
+// --- Native Web Speech API hook ---
+function useNativeSpeechRecognition() {
+  const [listening, setListening] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [browserSupported, setBrowserSupported] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  useEffect(() => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    setBrowserSupported(!!SR);
+  }, []);
+
+  const stopListening = useCallback(() => {
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
+    setListening(false);
+  }, []);
+
+  const startListening = useCallback((previousInput: string) => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) {
+      setMicError('Trình duyệt không hỗ trợ nhận giọng nói. Vui lòng dùng Chrome.');
+      return;
+    }
+
+    // Clean up previous session if any
+    recognitionRef.current?.stop();
+
+    const recognition: SpeechRecognition = new SR();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'vi-VN';
+
+    recognition.onstart = () => {
+      setListening(true);
+      setMicError(null);
+    };
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let interimTranscript = '';
+      let finalTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const text = event.results[i][0].transcript;
+        if (event.results[i].isFinal) finalTranscript += text;
+        else interimTranscript += text;
+      }
+      const combined = finalTranscript || interimTranscript;
+      const prefix = previousInput ? previousInput + ' ' : '';
+      setTranscript(prefix + combined);
+    };
+
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      console.error('[SpeechRecognition] error:', event.error, event.message);
+      setListening(false);
+      recognitionRef.current = null;
+      switch (event.error) {
+        case 'not-allowed':
+          setMicError('Trình duyệt chưa được cấp quyền microphone. Vui lòng cho phép trong cài đặt.');
+          break;
+        case 'no-speech':
+          setMicError('Không nghe thấy âm thanh. Vui lòng thử lại.');
+          break;
+        case 'network':
+          setMicError('Lỗi mạng khi nhận diện giọng nói. Kiểm tra kết nối internet.');
+          break;
+        case 'audio-capture':
+          setMicError('Không thể truy cập microphone. Kiểm tra thiết bị của bạn.');
+          break;
+        case 'service-not-allowed':
+          setMicError('Dịch vụ nhận giọng nói bị chặn trên domain này.');
+          break;
+        default:
+          setMicError(`Lỗi nhận giọng nói: ${event.error}`);
+      }
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+      recognitionRef.current = null;
+    };
+
+    try {
+      recognition.start();
+      recognitionRef.current = recognition;
+    } catch (e: any) {
+      console.error('[SpeechRecognition] start error:', e);
+      setMicError(`Không thể khởi động microphone: ${e?.message || e}`);
+    }
+  }, []);
+
+  const resetTranscript = useCallback(() => setTranscript(''), []);
+
+  // Auto-clear mic error after 5s
+  useEffect(() => {
+    if (micError) {
+      const t = setTimeout(() => setMicError(null), 5000);
+      return () => clearTimeout(t);
+    }
+  }, [micError]);
+
+  return { listening, transcript, browserSupported, micError, setMicError, startListening, stopListening, resetTranscript };
+}
+// --- end hook ---
+
 export function ChatPanel() {
   const {
     messages, isAIThinking, thinkingConversationId,
@@ -124,49 +227,37 @@ export function ChatPanel() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const navigate = useNavigate();
+  const previousInputRef = useRef('');
 
   const {
-    transcript,
     listening,
-    resetTranscript,
-    browserSupportsSpeechRecognition,
-    isMicrophoneAvailable
-  } = useSpeechRecognition();
-  const previousInputRef = useRef('');
-  const [micError, setMicError] = useState<string | null>(null);
+    transcript,
+    browserSupported,
+    micError,
+    setMicError,
+    startListening,
+    stopListening,
+    resetTranscript
+  } = useNativeSpeechRecognition();
 
+  // Sync transcript -> input box
   useEffect(() => {
-    if (listening) {
-      const prefix = previousInputRef.current ? previousInputRef.current + ' ' : '';
-      setInput(prefix + transcript);
+    if (listening && transcript) {
+      setInput(transcript);
     }
   }, [transcript, listening]);
 
-  // Clear mic error after 4s
-  useEffect(() => {
-    if (micError) {
-      const t = setTimeout(() => setMicError(null), 4000);
-      return () => clearTimeout(t);
-    }
-  }, [micError]);
-
   const handleMicClick = () => {
-    if (!browserSupportsSpeechRecognition) {
+    if (!browserSupported) {
       setMicError('Trình duyệt của bạn không hỗ trợ nhận giọng nói. Vui lòng dùng Chrome.');
       return;
     }
-    if (!isMicrophoneAvailable) {
-      setMicError('Vui lòng cho phép truy cập microphone trong cài đặt trình duyệt.');
-      return;
-    }
-
     if (listening) {
-      SpeechRecognition.stopListening();
+      stopListening();
     } else {
-      setMicError(null);
       previousInputRef.current = input;
       resetTranscript();
-      SpeechRecognition.startListening({ continuous: true, language: 'vi-VN' });
+      startListening(input);
     }
   };
 
@@ -280,30 +371,28 @@ export function ChatPanel() {
           <div className="flex items-center justify-between px-3 pb-2.5">
             <div className="flex items-center gap-1">
 
-              {/* Show mic button always; show warning icon if no support */}
+              {/* Mic button - native Web Speech API */}
               <button
                 type="button"
                 onClick={handleMicClick}
                 className={`p-1.5 rounded-full transition-colors flex items-center justify-center ${
                   listening
                     ? 'bg-red-100 text-red-500 animate-pulse'
-                    : !browserSupportsSpeechRecognition || !isMicrophoneAvailable
+                    : !browserSupported
                     ? 'text-muted-foreground/40 hover:bg-muted cursor-not-allowed'
                     : 'text-muted-foreground hover:bg-muted'
                 }`}
                 title={
                   listening
                     ? 'Đang thu âm... (click để dừng)'
-                    : !browserSupportsSpeechRecognition
+                    : !browserSupported
                     ? 'Trình duyệt không hỗ trợ giọng nói (dùng Chrome)'
-                    : !isMicrophoneAvailable
-                    ? 'Microphone chưa được cấp quyền'
                     : 'Nhập bằng giọng nói'
                 }
               >
                 {listening ? (
                   <MicOff className="w-4 h-4" />
-                ) : !browserSupportsSpeechRecognition ? (
+                ) : !browserSupported ? (
                   <span className="relative">
                     <Mic className="w-4 h-4" />
                     <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-400 rounded-full" />
